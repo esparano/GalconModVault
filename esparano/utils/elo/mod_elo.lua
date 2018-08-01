@@ -1,3 +1,4 @@
+-- TODO: documentation
 function _elo_init()
 
 local ELOS = {}
@@ -58,6 +59,19 @@ local function print_rankings()
     end
 end
 
+local function save_rankings()
+    g2.data = json.encode(ELOS);
+end
+
+local function load_rankings()
+    local rankings = json.decode(g2.data)
+    if (rankings == nil) then
+        print("WARNING: No rankings loaded")
+    else 
+        ELOS = rankings
+    end
+end
+
 local elo = {
     update_elo = update_elo,
     get_elo = get_elo,
@@ -68,6 +82,8 @@ local elo = {
     get_k = get_k,
     set_k = set_k,
     print_rankings = print_rankings,
+    save_rankings = save_rankings,
+    load_rankings = load_rankings,
     _win_probability = _win_probability,
     _calculate_new_elos = _calculate_new_elos
 }

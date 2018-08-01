@@ -11,6 +11,8 @@ function init()
     --test_get_and_set_k()
     --test_update()
     --test_update_multiple()
+    --test_save_rankings()
+    --test_load_rankings()
 end
 
 function test_available_functions()
@@ -23,6 +25,8 @@ function test_available_functions()
     print(elo.get_k)
     print(elo.set_k)
     print(elo.print_rankings)
+    print(elo.save_rankings)
+    print(elo.load_rankings)
     print(elo._win_probability)
     print(elo._calculate_new_elos)
 end
@@ -36,6 +40,8 @@ function test_local_functions()
     print(get_k)
     print(set_k)
     print(print_rankings)
+    print(save_rankings)
+    print(load_rankings)
     print(_win_probability)
     print(_calculate_new_elos)
 end
@@ -109,6 +115,18 @@ function test_update_multiple()
     elo.update_elo(3, 5, false)
     elo.print_rankings()
     elo.update_elo(3, 5, true)
+    elo.print_rankings()
+end
+
+function test_save_rankings()
+    elo.set_elo("sdf", 1800)
+    elo.set_elo(4, 1700)
+    elo.set_elo(400, 1100)
+    elo.save_rankings()
+end
+
+function test_load_rankings()
+    elo.load_rankings()
     elo.print_rankings()
 end
 
