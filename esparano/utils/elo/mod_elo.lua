@@ -53,22 +53,22 @@ local function set_k(k)
     K = k
 end
 
-local function print_rankings()
+local function print_ratings()
     for user,elo in pairs(ELOS) do
         print("user: " .. user .. ", elo: " .. elo)
     end
 end
 
-local function save_rankings()
+local function save_ratings()
     g2.data = json.encode(ELOS);
 end
 
-local function load_rankings()
-    local rankings = json.decode(g2.data)
-    if (rankings == nil) then
-        print("WARNING: No rankings loaded")
+local function load_ratings()
+    local ratings = json.decode(g2.data)
+    if (ratings == nil) then
+        print("WARNING: No ratings loaded")
     else 
-        ELOS = rankings
+        ELOS = ratings
     end
 end
 
@@ -81,9 +81,9 @@ local elo = {
     set_default_elo = set_default_elo,
     get_k = get_k,
     set_k = set_k,
-    print_rankings = print_rankings,
-    save_rankings = save_rankings,
-    load_rankings = load_rankings,
+    print_ratings = print_ratings,
+    save_ratings = save_ratings,
+    load_ratings = load_ratings,
     _win_probability = _win_probability,
     _calculate_new_elos = _calculate_new_elos
 }
