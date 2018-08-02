@@ -2,8 +2,11 @@
 function _elo_init()
 
 local ELOS = {}
-local RESET_DEFAULT_ELO, DEFAULT_ELO = 1500
-local RESET_K, K = 32
+local RESET_DEFAULT_ELO = 1500
+local DEFAULT_ELO = RESET_DEFAULT_ELO
+    
+local RESET_K = 32
+local K = RESET_K
 
 local function get_elo(user)
     ELOS[user] = ELOS[user] or DEFAULT_ELO
