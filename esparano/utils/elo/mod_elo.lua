@@ -2,8 +2,8 @@
 function _elo_init()
 
 local ELOS = {}
-local DEFAULT_ELO = 1500
-local K = 16
+local RESET_DEFAULT_ELO, DEFAULT_ELO = 1500
+local RESET_K, K = 32
 
 local function get_elo(user)
     ELOS[user] = ELOS[user] or DEFAULT_ELO
@@ -66,10 +66,20 @@ end
 local function load_ratings()
     local ratings = json.decode(g2.data)
     if (ratings == nil) then
-        print("WARNING: No ratings loaded")
+        print("elo: WARNING: No ratings loaded")
     else 
         ELOS = ratings
     end
+end
+
+local function clear_ratings()
+    ELOS = {}
+end
+
+local function reset()
+    ELOS = {}
+    K = RESET_K
+    DEFAULT_ELO = RESET_DEFAULT_ELO
 end
 
 local elo = {
@@ -84,6 +94,8 @@ local elo = {
     print_ratings = print_ratings,
     save_ratings = save_ratings,
     load_ratings = load_ratings,
+    clear_ratings = clear_ratings,
+    reset = reset,
     _win_probability = _win_probability,
     _calculate_new_elos = _calculate_new_elos
 }
