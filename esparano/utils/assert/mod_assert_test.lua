@@ -10,9 +10,9 @@ function init()
     --test_is_true_fail_with_message()
     --test_is_true_invalid_with_message()
     --test_equals()
-    test_equals_fail()
+    --test_equals_fail()
     --test_not_equals()
-    test_not_equals_fail()
+    --test_not_equals_fail()
 end
 
 function test_available_functions()
