@@ -1,26 +1,14 @@
 require("mod_assert")
 
-function init()
-    --test_available_functions()
-    --test_local_functions()
-    --test_is_true()
-    --test_is_true_fail()
-    --test_is_true_invalid()
-    --test_is_true_with_message()
-    --test_is_true_fail_with_message()
-    --test_is_true_invalid_with_message()
-    --test_equals()
-    --test_equals_fail()
-    --test_not_equals()
-    --test_not_equals_fail()
-end
-
 function test_available_functions()
     print(assert)
     print(assert.is_true)
     print(assert.is_false)
     print(assert.equals)
     print(assert.not_equals)
+    for k,v in pairs(assert) do
+        print(k)
+    end
 end
 
 function test_local_functions()
@@ -82,8 +70,13 @@ function test_not_equals_fail()
     assert.not_equals(4, 4, "some message")
 end
 
+function init()
+end
+
 function loop(t)
 end
 
 function event(e)
 end
+
+require("mod_test_runner")
