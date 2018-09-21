@@ -23,7 +23,7 @@ function elo.get_elos()
 end
 
 function elo._win_probability(r1, r2)
-    return 1 - 1 / (1 + math.pow(10, (r1 - r2) / 400));
+    return 1 / (1 + math.pow(10, (r2 - r1) / 400));
 end
 
 function elo._calculate_new_elos(r1, r2, first_won) 
