@@ -5,24 +5,30 @@ function _nn_init()
     local nn = {}
 
     function nn.new(weights, useBias)
-        local _o = {}
-        for k, v in nn do
-            _o[k] = v
+        local instance = {}
+        for k, v in pairs(nn) do
+            instance[k] = v
         end
-        _o.weights = weights
-        _o.useBias = useBias
-        return _o
+        instance.weights = weights
+        instance.useBias = useBias
+        return instance
     end
 
-    function nn.compute(input)
+    function nn:predict(input)
+        -- destructively modifies input - make a copy?...
         local v = input
-        for i,layerWeights in ipairs(self.weights) do
-            -- destructively modifies input - make a copy?...
-            if self.useBias then v[#v] = 1 end
+        for i, layerWeights in ipairs(self.weights) do
+            if self.useBias then
+                v[#v + 1] = 1
+            end
             v = nn.multiplyByMatrix(v, layerWeights)
             -- apply ReLU
-            for j=1,#v do
-                if v[j] < 0 then v[j] = 0 end
+            -- TODO: different activation functions
+            -- TODO: add a layer at a time, specify weights/activation function per-layer like Keras? could redo bias too
+            for j = 1, #v do
+                if v[j] < 0 then
+                    v[j] = 0
+                end
             end
         end
         return v
@@ -31,14 +37,20 @@ function _nn_init()
     -- function that takes an N+1(bias) by M matrix of weights, applies weights to N length input vector,
     -- and produces an M length output vector
     function nn.multiplyByMatrix(input, weightMatrix)
+        assert.equals(
+            #input,
+            #weightMatrix,
+            "weight matrix does not match input dimensions. Note: Bias is the last column of weights if present"
+        )
         local output = {}
-        for i,weights in ipairs(weightMatrix) do
-            assert.equals(#weights, #input)
-            local dotProduct = 0
-            for j=1,#weights do
-                dotProduct = dotProduct + input[j] * weights[j]
+        local outputLen = #(weightMatrix[1])
+        for j = 1, outputLen do
+            output[j] = 0
+        end
+        for n, nodeWeights in ipairs(weightMatrix) do
+            for j = 1, #nodeWeights do
+                output[j] = output[j] + input[n] * nodeWeights[j]
             end
-            output[i] = dotProduct
         end
         return output
     end
