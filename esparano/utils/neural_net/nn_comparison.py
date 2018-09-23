@@ -4,7 +4,7 @@ from keras.initializers import Constant
 import numpy
 numpy.random.seed(70)
 model = Sequential()
-model.add(Dense(2, input_dim=4, kernel_initializer='uniform', activation='relu', use_bias=True, bias_initializer=Constant(0.01)))
+model.add(Dense(2, input_dim=4, kernel_initializer='uniform', activation='sigmoid', use_bias=True, bias_initializer=Constant(0.01)))
 print(model.get_weights())
 # calculate predictions
 a = numpy.array([[1,2,3,4]])

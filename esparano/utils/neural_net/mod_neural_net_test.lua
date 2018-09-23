@@ -57,7 +57,7 @@ function test_predict_with_bias()
     end
 end
 
-function test_predict_with_bias_real()
+function test_predict_with_bias_real_relu()
     local input = {1, 2, 3, 4}
     local weights = {
         {-0.00507037, -0.04878497},
@@ -69,10 +69,29 @@ function test_predict_with_bias_real()
     local expected = {0.41366219, 0}
 
     local net = nn.new()
-    net:addLayer(weights, "relu", true)
+    net:addLayer(weights, 'relu', true)
     local actual = net:predict(input)
     for i = 1, #expected do
         assert.equals(round(expected[i], 7), round(actual[i], 7))
+    end
+end
+
+function test_predict_with_bias_real_sigmoid()
+    local input = {1, 2, 3, 4}
+    local weights = {
+        {-0.00507037, -0.04878497},
+        {0.04400307, 0.01574006},
+        {0.04959274, 0.04452698},
+        {0.04298705, -0.04140915},
+        {0.01, 0.01} -- bias
+    }
+    local expected = {0.60196567, 0.49016115}
+
+    local net = nn.new()
+    net:addLayer(weights, 'sigmoid', true)
+    local actual = net:predict(input)
+    for i = 1, #expected do
+        assert.equals(round(expected[i], 6), round(actual[i], 6))
     end
 end
 

@@ -21,6 +21,14 @@ function _nn_init()
         }
     end
 
+    local function relu_activation(x)
+        if x < 0 then return 0 else return x end
+    end
+
+    local function sigmoid_activation(x)
+        return 1 / (1 + math.exp(-x))
+    end
+
     function nn:predict(input)
         -- destructively modifies input - make a copy?...
         local v = input
@@ -32,14 +40,16 @@ function _nn_init()
             v = nn.multiplyByMatrix(v, layerWeights)
             -- apply ReLU
             -- TODO: different activation functions
-            if layer.activation == "relu" then
-                for j = 1, #v do
-                    if v[j] < 0 then
-                        v[j] = 0
-                    end
-                end
+            local activation
+            if layer.activation == 'relu' then
+                activation = relu_activation
+            elseif layer.activation == 'sigmoid' then
+                activation = sigmoid_activation
             else
                 error("activation function unrecognized or unsupported")
+            end
+            for j = 1, #v do
+                v[j] = activation(v[j])
             end
         end
         return v
