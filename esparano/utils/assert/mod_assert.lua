@@ -30,6 +30,9 @@ local function _equals_boolean(b, cond, message)
     assert.equals(b, cond, message)
 end
 
+-- TODO: assert.equals_epsilon
+-- TODO: assert.equals_array/table/deep-equals
+
 function assert.is_true(cond, message)
     _equals_boolean(true, cond, message)
 end
