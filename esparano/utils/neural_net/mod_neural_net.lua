@@ -9,26 +9,37 @@ function _nn_init()
         for k, v in pairs(nn) do
             instance[k] = v
         end
-        instance.weights = weights
-        instance.useBias = useBias
+        instance.layers = {}
         return instance
+    end
+
+    function nn:addLayer(weights, activation, useBias)
+        self.layers[#self.layers + 1] = {
+            weights = weights,
+            activation = activation,
+            useBias = useBias
+        }
     end
 
     function nn:predict(input)
         -- destructively modifies input - make a copy?...
         local v = input
-        for i, layerWeights in ipairs(self.weights) do
-            if self.useBias then
+        for _, layer in ipairs(self.layers) do
+            local layerWeights = layer.weights
+            if layer.useBias then
                 v[#v + 1] = 1
             end
             v = nn.multiplyByMatrix(v, layerWeights)
             -- apply ReLU
             -- TODO: different activation functions
-            -- TODO: add a layer at a time, specify weights/activation function per-layer like Keras? could redo bias too
-            for j = 1, #v do
-                if v[j] < 0 then
-                    v[j] = 0
+            if layer.activation == "relu" then
+                for j = 1, #v do
+                    if v[j] < 0 then
+                        v[j] = 0
+                    end
                 end
+            else
+                error("activation function unrecognized or unsupported")
             end
         end
         return v
