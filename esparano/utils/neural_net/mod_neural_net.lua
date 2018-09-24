@@ -58,6 +58,7 @@ function _nn_init()
     -- function that takes an N+1(bias) by M matrix of weights, applies weights to N length input vector,
     -- and produces an M length output vector
     function nn.multiplyByMatrix(input, weightMatrix)
+        -- TODO: debug/developer mode?
         assert.equals(
             #input,
             #weightMatrix,
