@@ -27,6 +27,7 @@ function _profiler_init()
     end
 
     -- note: functions on obj cannot change after this point or they won't be tracked
+    -- NOTE: If functions do not take at least 1ms, they don't get counted :(. Lua sucks sometimes.
     function profiler:profile(obj)
         self.data[obj] = {}
         for k, v in pairs(obj) do
@@ -37,7 +38,7 @@ function _profiler_init()
         end
     end
 
-    -- data[obj].funcName.n = num calls, data[obj].funcName.elapsed = total elapsed time for n calls 
+    -- data[obj].funcName.n = num calls, data[obj].funcName.elapsed = total elapsed time for n calls
     function profiler:getData()
         return self.data
     end
