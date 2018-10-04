@@ -69,7 +69,7 @@ function test_predict_with_bias_real_relu()
     local expected = {0.41366219, 0}
 
     local net = nn.new()
-    net:addLayer(weights, 'relu', true)
+    net:addLayer(weights, "relu", true)
     local actual = net:predict(input)
     for i = 1, #expected do
         assert.equals(round(expected[i], 7), round(actual[i], 7))
@@ -88,7 +88,7 @@ function test_predict_with_bias_real_sigmoid()
     local expected = {0.60196567, 0.49016115}
 
     local net = nn.new()
-    net:addLayer(weights, 'sigmoid', true)
+    net:addLayer(weights, "sigmoid", true)
     local actual = net:predict(input)
     for i = 1, #expected do
         assert.equals(round(expected[i], 6), round(actual[i], 6))
@@ -110,8 +110,8 @@ function test_predict_multiple_layers_and_bias()
     }
     local expected = {370.123}
     local net = nn.new()
-    net:addLayer(layer1Weights, 'relu', false)
-    net:addLayer(layer2Weights, 'relu', true)
+    net:addLayer(layer1Weights, "relu", false)
+    net:addLayer(layer2Weights, "relu", true)
     local actual = net:predict(input)
     for i = 1, #input do
         assert.equals(expected[i], actual[i])

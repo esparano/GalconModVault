@@ -22,7 +22,11 @@ function _nn_init()
     end
 
     local function relu_activation(x)
-        if x < 0 then return 0 else return x end
+        if x < 0 then
+            return 0
+        else
+            return x
+        end
     end
 
     local function sigmoid_activation(x)
@@ -41,9 +45,9 @@ function _nn_init()
             -- apply ReLU
             -- TODO: different activation functions
             local activation
-            if layer.activation == 'relu' then
+            if layer.activation == "relu" then
                 activation = relu_activation
-            elseif layer.activation == 'sigmoid' then
+            elseif layer.activation == "sigmoid" then
                 activation = sigmoid_activation
             else
                 error("activation function unrecognized or unsupported")
