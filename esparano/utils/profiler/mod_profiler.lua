@@ -37,9 +37,28 @@ function _profiler_init()
         end
     end
 
-    -- data[obj].funcName.n = num calls, data[obj].funcName.elapsed = total elapsed time for n calls 
+    -- data[obj].funcName.n = num calls, data[obj].funcName.elapsed = total elapsed time for n calls
     function profiler:getData()
         return self.data
+    end
+
+    function profiler:printData(obj, objName)
+        if self.data[obj] == nil then
+            print("obj " .. objName .. " was not found. Profiling statistics cannot be printed")
+            return
+        else
+            objName = objName == nil and tostring(obj) or objName
+            print("Profiling obj " .. objName .. ": _________")
+            for funcName, t in pairs(self.data[obj]) do
+                print(
+                    objName ..
+                        "." ..
+                            funcName ..
+                                ":  n: " ..
+                                    t.n .. ", t: " .. round(t.elapsed, 5) .. ", t/n: " .. round(t.elapsed / t.n, 5)
+                )
+            end
+        end
     end
 
     return profiler
