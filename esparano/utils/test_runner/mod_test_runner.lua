@@ -8,3 +8,10 @@ function _run_tests()
         end
     end
 end; _run_tests(); _run_tests = nil
+
+function init()
+end
+function loop()
+end
+function event()
+end

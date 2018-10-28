@@ -45,13 +45,4 @@ function test_profiling_data()
     assert.is_true(data[testModule].f.elapsed > elapsed)
 end
 
-function init()
-end
-
-function loop(t)
-end
-
-function event(e)
-end
-
 require("mod_test_runner")

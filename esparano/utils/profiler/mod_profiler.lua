@@ -23,6 +23,7 @@ function _profiler_init()
             local result = func(...)
             trackCall(self, obj, funcName, os.clock() - start)
             return result -- DOES NOT WORK FOR MULTIPLE RETURN VALUES
+            -- TODO: use table.unpack
         end
     end
 

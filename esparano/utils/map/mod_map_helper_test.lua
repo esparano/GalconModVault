@@ -16,13 +16,4 @@ function test_get_and_set_default_map()
     print(m:totalProd())
 end
 
-function init()
-end
-
-function loop(t)
-end
-
-function event(e)
-end
-
 require("mod_test_runner")

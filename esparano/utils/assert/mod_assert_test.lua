@@ -70,13 +70,4 @@ function test_not_equals_fail()
     assert.not_equals(4, 4, "some message")
 end
 
-function init()
-end
-
-function loop(t)
-end
-
-function event(e)
-end
-
 require("mod_test_runner")
