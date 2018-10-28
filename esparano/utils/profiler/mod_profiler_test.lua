@@ -43,6 +43,29 @@ function test_profiling_data()
     
     assert.equals(2, data[testModule].f.n)
     assert.is_true(data[testModule].f.elapsed > elapsed)
+    
+    -- test getN and getElapsed
+    assert.equals(data[testModule].f.n, profiler:getN(testModule, "f"))
+    assert.equals(data[testModule].f.elapsed, profiler:getElapsed(testModule, "f"))
+end
+
+function test_getN_unknown_func()
+    local testModule = {}
+    local profiler = profiler.new()
+    profiler:profile(testModule)
+
+    assert.equals(0, profiler:getN(testModule, "asdf"))
+    assert.equals(0, profiler:getElapsed(testModule, "asdf"))
+end
+
+function test_getN_unknown_obj()
+    local testModule = {asdf = function() print("inside asdf") end}
+    local profiler = profiler.new()
+    -- OOPS! forgot to track the object
+    --profiler:profile(testModule)
+
+    assert.equals(0, profiler:getN(testModule, "asdf"))
+    assert.equals(0, profiler:getElapsed(testModule, "asdf"))
 end
 
 require("mod_test_runner")

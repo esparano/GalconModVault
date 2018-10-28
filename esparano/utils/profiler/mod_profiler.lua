@@ -44,6 +44,28 @@ function _profiler_init()
         return self.data
     end
 
+    local function verifyHasData(data, obj, funcName)
+        if data[obj] == nil then
+            print("ERROR: No profiling data for unknown object " .. tostring(obj))
+            return false
+        end
+        if data[obj][funcName] == nil then
+            print("ERROR: No profiling data for unknown function " .. funcName)
+            return false
+        end
+        return true
+    end
+
+    function profiler:getN(obj, funcName)
+        if not verifyHasData(self.data, obj, funcName) then return 0 end
+        return self.data[obj][funcName].n
+    end
+
+    function profiler:getElapsed(obj, funcName)
+        if not verifyHasData(self.data, obj, funcName) then return 0 end
+        return self.data[obj][funcName].elapsed
+    end
+
     return profiler
 end
 profiler = _profiler_init()
