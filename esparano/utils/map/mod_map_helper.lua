@@ -1,8 +1,16 @@
+require("mod_memoize")
+
 -- TODO: documentation
 -- Precalculates things for speeding up future calculations
 -- Provides API for quickly and efficiently accessing aspects about the map
 function _map_init()
     local map = {}
+
+    local cachedFunctions = {
+        "getPlanetList",
+        "totalProd",
+        "totalShips",
+    }
 
     function map.new(items)
         local instance = {}
@@ -10,13 +18,25 @@ function _map_init()
             instance[k] = v
         end
 
-        instance:initialCalculations(items)
-        instance:update(items)
+        -- set up memoization of key functions
+        instance.caches = {}
+        for _, s in pairs(cachedFunctions) do
+            instance.caches[s] = {}
+            instance[s] = memoize(instance[s], instance.caches[s])
+        end
+
+        instance.items = items
 
         return instance
     end
 
-    function map:initialCalculations(items)
+    function map:_resetCaches()
+        for _, s in pairs(cachedFunctions) do
+            local t = self.caches[s]
+            for k in pairs(t) do
+                t[k] = nil
+            end
+        end
     end
 
     local function searchItems(items, f)
@@ -31,49 +51,34 @@ function _map_init()
 
     function map:update(items)
         self.items = items
-        self.userList = nil
-        self.planetList = nil
-        self.totalProdVal = nil
-        self.fleetList = nil
+        self:_resetCaches()
     end
 
-    function map:getPlanetList()
-        if not self.planetList then
-            self.planetList =
-                searchItems(
-                self.items,
-                function(item)
-                    return item.is_planet
-                end
-            )
-        end
-        return self.planetList
+    function map:getPlanetList(ownerId)
+        return searchItems(
+            self.items,
+            function(item)
+                return item.is_planet and (ownerId == nil or ownerId == item.owner)
+            end
+        )
     end
-
-    -- TODO:
-    function map:totalProd()
-        -- memoize all functions? update clears some functions?
-        if self.totalProdVal ~= nil then
-            return self.totalProdVal
-        end
-        local planetList = self:getPlanetList()
-        -- TODO: functional programming library?
+    
+    -- TODO: functional programming library?
+    local function sumProperty(l, p)
         local sum = 0
-        for _, planet in ipairs(planetList) do
-            sum = sum + planet.production
+        for _, v in ipairs(l) do
+            sum = sum + v[p]
         end
-        self.totalProdVal = sum
         return sum
     end
 
-    function map:totalPlayerProd(playerId)
+    -- playerId is optional
+    function map:totalProd(ownerId)
+        return sumProperty(self:getPlanetList(ownerId), "production")
     end
 
-    -- TODO:
-    function map:totalShips()
-    end
-
-    function map:totalPlayerShips(playerId)
+    function map:totalShips(ownerId)
+        return sumProperty(self:getPlanetList(ownerId), "ships")
     end
 
     return map
