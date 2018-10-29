@@ -79,4 +79,13 @@ function test_update_items()
     assert.equals(2, p:getN(m, "getPlanetList"))
 end
 
+function test_getUserList()
+    local allUsers = m:getUserList()
+    assert.equals(3, #allUsers)
+    local stillAllUsers = m:getUserList(true)
+    assert.equals(3, #stillAllUsers)
+    local humanUsers = m:getUserList(false)
+    assert.equals(2, #humanUsers)
+end
+
 require("mod_test_runner")

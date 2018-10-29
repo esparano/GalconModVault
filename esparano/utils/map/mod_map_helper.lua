@@ -8,6 +8,9 @@ function _map_init()
 
     local cachedFunctions = {
         "getPlanetList",
+        "getPlanetAndFleetList",
+        "getUserList",
+        "getNeutralUser",
         "totalProd",
         "totalShips"
     }
@@ -54,6 +57,7 @@ function _map_init()
         self:_resetCaches()
     end
 
+    -- TODO: refactor searching for planets/users/etc.
     function map:getPlanetList(ownerId)
         return searchItems(
             self.items,
@@ -63,15 +67,37 @@ function _map_init()
         )
     end
 
-    function map:getUserList()
+    -- TODO: test
+    function map:getPlanetAndFleetList(ownerId)
         return searchItems(
             self.items,
             function(item)
-                return item.is_user
+                return (item.is_planet or item.is_fleet) and (ownerId == nil or ownerId == item.owner)
             end
         )
     end
-    
+
+    function map:getUserList(includeNeutral)
+        if includeNeutral == nil then
+            includeNeutral = true
+        end
+        return searchItems(
+            self.items,
+            function(item)
+                return item.is_user and (includeNeutral or not item.neutral)
+            end
+        )
+    end
+
+    function map:getNeutralUser()
+        local users = self:getUserList()
+        for _, u in ipairs(users) do
+            if u.neutral then
+                return u
+            end
+        end
+    end
+
     -- TODO: functional programming library?
     local function sumProperty(l, p)
         local sum = 0
