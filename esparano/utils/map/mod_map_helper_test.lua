@@ -3,32 +3,80 @@ require("mod_testmapgen")
 require("mod_map_helper")
 require("mod_profiler")
 
+local m
+local p
+function before_each()
+    local items = genMap()
+    assert.not_equals(0, #items)
+    m = map.new(items)
+    p = profiler.new()
+    p:profile(m)
+end
+
 function test_available_functions()
     assert.not_equals(nil, map)
 end
 
-function test_memoization_benchmark()
-    local items = genMap()
-    assert.not_equals(0, #items)
-
-    local m = map.new(items)
-    
-    local p = profiler.new()
-    p:profile(m)    
-
-    for i = 1, 1000 do
-        m:totalShips()
-        m:_resetCaches()
-    end
-    assert.equals(1000, p:getN(m, "getPlanetList"))
-
-    for i = 1, 1000 do
-        m:totalShips()
-    end
-    assert.equals(1001, p:getN(m, "getPlanetList"))
+function test_totalShips_memoization()
+    m:totalShips()
+    m:totalShips()
+    assert.equals(1, p:getN(m, "getPlanetList"))
+    m:_resetCaches()
+    m:totalShips()
+    assert.equals(2, p:getN(m, "getPlanetList"))
 end
 
--- TODO: test memoization for getting ships for a certain player
--- TODO: test updating items
+function test_totalProd_memoization()
+    m:totalProd()
+    m:totalProd()
+    assert.equals(1, p:getN(m, "getPlanetList"))
+    m:_resetCaches()
+    m:totalProd()
+    assert.equals(2, p:getN(m, "getPlanetList"))
+end
+
+function test_totalShips_ownerId_memoization()
+    local users = m:getUserList()
+    local total = 0
+    for _,u in ipairs(users) do
+        total = total + m:totalShips(u.n)
+    end
+    assert.equals_epsilon(m:totalShips(), total, 0.0001)
+    assert.equals(4, p:getN(m, "getPlanetList"))
+
+    for _,u in pairs(users) do
+        total = total + m:totalShips(u.n)
+    end
+    m:totalShips()
+    assert.equals(4, p:getN(m, "getPlanetList"))
+end
+
+function test_totalProd_ownerId_memoization()
+    local users = m:getUserList()
+    local total = 0
+    for _,u in ipairs(users) do
+        total = total + m:totalProd(u.n)
+    end
+    assert.equals_epsilon(m:totalProd(), total, 0.0001)
+    assert.equals(4, p:getN(m, "getPlanetList"))
+
+    for _,u in pairs(users) do
+        total = total + m:totalProd(u.n)
+    end
+    m:totalProd()
+    assert.equals(4, p:getN(m, "getPlanetList"))
+end
+
+function test_update_items()
+    local oldTotalProd = m:totalProd()
+    m:totalProd()
+    assert.equals(1, p:getN(m, "getPlanetList"))
+
+    m:update(genMap())
+    local newTotalProd = m:totalProd()
+    m:totalProd()
+    assert.not_equals(oldTotalProd, newTotalProd)
+    assert.equals(2, p:getN(m, "getPlanetList"))
+end
 
 require("mod_test_runner")

@@ -9,7 +9,7 @@ function _map_init()
     local cachedFunctions = {
         "getPlanetList",
         "totalProd",
-        "totalShips",
+        "totalShips"
     }
 
     function map.new(items)
@@ -59,6 +59,15 @@ function _map_init()
             self.items,
             function(item)
                 return item.is_planet and (ownerId == nil or ownerId == item.owner)
+            end
+        )
+    end
+
+    function map:getUserList()
+        return searchItems(
+            self.items,
+            function(item)
+                return item.is_user
             end
         )
     end
