@@ -1,11 +1,6 @@
 require("mod_assert")
 
 function test_available_functions()
-    print(assert)
-    print(assert.is_true)
-    print(assert.is_false)
-    print(assert.equals)
-    print(assert.not_equals)
     for k,v in pairs(assert) do
         print(k)
     end
@@ -16,6 +11,7 @@ function test_local_functions()
     print(is_false)
     print(equals)
     print(not_equals)
+    print(equals_epsilon)
 end
 
 function test_is_true()
@@ -70,13 +66,20 @@ function test_not_equals_fail()
     assert.not_equals(4, 4, "some message")
 end
 
-function init()
+function test_equals_epsilon()
+    assert.equals_epsilon(1.1, 1.2, 0.21)
+    assert.equals_epsilon(1.1, 1.2, 0.1)
+    
+    assert.equals_epsilon(1.2, 1.1, 0.21)
+    assert.equals_epsilon(1.2, 1.1, 0.1)
 end
 
-function loop(t)
-end
-
-function event(e)
+function test_equals_epsilon_fail()
+    assert.equals_epsilon(1.1, 1.2)
+    assert.equals_epsilon({}, 7, 0.1)
+    assert.equals_epsilon(1, {}, 0.1)
+    assert.equals_epsilon(1, 7, {})
+    assert.equals_epsilon(4, 7, 1, "some message")
 end
 
 require("mod_test_runner")

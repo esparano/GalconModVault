@@ -121,13 +121,4 @@ function test_save_and_load_ratings()
     assert.equals(1800, elo.get_elo(username))
 end
 
-function init()
-end
-
-function loop(t)
-end
-
-function event(e)
-end
-
 require("mod_test_runner")

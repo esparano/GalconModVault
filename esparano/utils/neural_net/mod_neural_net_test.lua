@@ -123,13 +123,4 @@ function round(num, numDecimalPlaces)
     return math.floor(num * mult + 0.5) / mult
 end
 
-function init()
-end
-
-function loop(t)
-end
-
-function event(e)
-end
-
 require("mod_test_runner")

@@ -23,10 +23,12 @@ function _profiler_init()
             local result = func(...)
             trackCall(self, obj, funcName, os.clock() - start)
             return result -- DOES NOT WORK FOR MULTIPLE RETURN VALUES
+            -- TODO: use table.unpack
         end
     end
 
     -- note: functions on obj cannot change after this point or they won't be tracked
+    -- NOTE: If functions do not take at least 1ms, they don't get counted :(. Lua sucks sometimes.
     function profiler:profile(obj)
         self.data[obj] = {}
         for k, v in pairs(obj) do
@@ -42,6 +44,28 @@ function _profiler_init()
         return self.data
     end
 
+    local function verifyHasData(data, obj, funcName)
+        if data[obj] == nil then
+            print("ERROR: No profiling data for unknown object " .. tostring(obj))
+            return false
+        end
+        if data[obj][funcName] == nil then
+            print("ERROR: No profiling data for unknown function " .. funcName)
+            return false
+        end
+        return true
+    end
+
+    function profiler:getN(obj, funcName)
+        if not verifyHasData(self.data, obj, funcName) then return 0 end
+        return self.data[obj][funcName].n
+    end
+
+    function profiler:getElapsed(obj, funcName)
+        if not verifyHasData(self.data, obj, funcName) then return 0 end
+        return self.data[obj][funcName].elapsed
+    end
+    
     function profiler:printData(obj, objName)
         if self.data[obj] == nil then
             print("obj " .. objName .. " was not found. Profiling statistics cannot be printed")
