@@ -49,6 +49,15 @@ function _features_init()
         return cOMDistance(userCOM, enemyCOM)
     end
 
+    function features.getAll(map, user, enemy)
+        local f = {}
+        table.insert(f, features.prodFraction(map, user, enemy))
+        table.insert(f, features.shipsFraction(map, user, enemy))
+        table.insert(f, features.prodCenterOfMassDistance(map, user, enemy))
+        table.insert(f, features.shipsCenterOfMassDistance(map, user, enemy))
+        return f
+    end
+
     return features
 end
 features = _features_init()

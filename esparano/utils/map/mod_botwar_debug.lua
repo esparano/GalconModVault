@@ -19,14 +19,13 @@ function _sandbox_init(_ENV) -- ignore -------------------------------------
     -- RETURN: Your bot should return a single command {percent=50,from=N or {N1,N2,N3...},to=N} The from may include both planets and/or fleets.
 
     function bots_debug(params)
-        -- setup
         G = params.items
         USER = params.user
         OPTS = params.opts
         MEM = params.memory
-        OPTS = OPTS or {percent = 65} -- setup defaults for the live server
+        OPTS = OPTS or {} -- setup defaults for the live server
         MEM.t = (MEM.t or 0) + 1
-        if (MEM.t % 4) ~= 1 then
+        if (MEM.t % 1) ~= 1 then
             return
         end -- do an action once per second
 
@@ -531,24 +530,3 @@ end
 function round(num)
     return math.floor(num + 0.5)
 end
-
-----------------------------------------------------------------------------
--- LICENSE -----------------------------------------------------------------
-----------------------------------------------------------------------------
-
-LICENSE =
-    [[
-mod_botwar.lua
-
-Copyright (c) 2013 Phil Hassey
-Modifed by: YOUR_NAME_HERE
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Galcon is a registered trademark of Phil Hassey
-For more information see http://www.galcon.com/
-]]
