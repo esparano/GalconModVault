@@ -4,7 +4,7 @@ require("mod_assert")
 function _nn_init()
     local nn = {}
 
-    function nn.new(weights, useBias)
+    function nn.new()
         local instance = {}
         for k, v in pairs(nn) do
             instance[k] = v
