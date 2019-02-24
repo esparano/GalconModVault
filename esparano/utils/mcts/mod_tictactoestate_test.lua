@@ -2,76 +2,76 @@ require("mod_assert")
 require("mod_tictactoestate")
 
 local EMPTY_BOARD = {
-    {'-', '-', '-'},
-    {'-', '-', '-'},
-    {'-', '-', '-'}
-};
+    {"-", "-", "-"},
+    {"-", "-", "-"},
+    {"-", "-", "-"}
+}
 
 local NON_TERMINAL_BOARD = {
-    {'X', '-', 'O'},
-    {'-', 'O', '-'},
-    {'X', 'X', '-'}
-};
+    {"X", "-", "O"},
+    {"-", "O", "-"},
+    {"X", "X", "-"}
+}
 
 local DRAW_BOARD = {
-    {'X', 'O', 'X'},
-    {'X', 'O', 'X'},
-    {'O', 'X', 'O'}
-};
+    {"X", "O", "X"},
+    {"X", "O", "X"},
+    {"O", "X", "O"}
+}
 
 local NOUGHT_WON_DIAGONAL_BOARD1 = {
-    {'O', '-', '-'},
-    {'X', 'O', 'X'},
-    {'-', '-', 'O'}
-};
+    {"O", "-", "-"},
+    {"X", "O", "X"},
+    {"-", "-", "O"}
+}
 
 local NOUGHT_WON_DIAGONAL_BOARD2 = {
-    {'-', '-', 'O'},
-    {'X', 'O', 'X'},
-    {'O', '-', '-'}
-};
+    {"-", "-", "O"},
+    {"X", "O", "X"},
+    {"O", "-", "-"}
+}
 
 local NOUGHT_WON_FULL_BOARD = {
-    {'X', 'O', 'O'},
-    {'X', 'O', 'X'},
-    {'O', 'X', 'O'}
-};
+    {"X", "O", "O"},
+    {"X", "O", "X"},
+    {"O", "X", "O"}
+}
 
 local CROSS_WON_COLUMN_BOARD1 = {
-    {'X', 'O', '-'},
-    {'X', 'O', '-'},
-    {'X', '-', 'O'}
-};
+    {"X", "O", "-"},
+    {"X", "O", "-"},
+    {"X", "-", "O"}
+}
 
 local CROSS_WON_COLUMN_BOARD2 = {
-    {'O', 'X', '-'},
-    {'-', 'X', 'O'},
-    {'-', 'X', 'O'}
-};
+    {"O", "X", "-"},
+    {"-", "X", "O"},
+    {"-", "X", "O"}
+}
 
 local CROSS_WON_COLUMN_BOARD3 = {
-    {'O', 'O', 'X'},
-    {'-', '-', 'X'},
-    {'-', 'O', 'X'}
-};
+    {"O", "O", "X"},
+    {"-", "-", "X"},
+    {"-", "O", "X"}
+}
 
 local CROSS_WON_ROW_BOARD1 = {
-    {'X', 'X', 'X'},
-    {'O', '-', '-'},
-    {'O', '-', 'O'}
-};
+    {"X", "X", "X"},
+    {"O", "-", "-"},
+    {"O", "-", "O"}
+}
 
 local CROSS_WON_ROW_BOARD2 = {
-    {'-', 'O', '-'},
-    {'X', 'X', 'X'},
-    {'-', 'O', 'O'}
-};
+    {"-", "O", "-"},
+    {"X", "X", "X"},
+    {"-", "O", "O"}
+}
 
 local CROSS_WON_ROW_BOARD3 = {
-    {'-', 'O', '-'},
-    {'O', '-', '-'},
-    {'X', 'X', 'X'}
-};
+    {"-", "O", "-"},
+    {"O", "-", "-"},
+    {"X", "X", "X"}
+}
 
 local state
 local noughtPlayer
@@ -84,55 +84,55 @@ function before()
 end
 
 function test_available_functions()
-    assert.not_equals(nil, TicTacToeState)
-    assert.not_equals(nil, TicTacToeState.new)
+    assert.not_nil(TicTacToeState)
+    assert.not_nil(TicTacToeState.new)
     local root = TicTacToeState.new()
-    for k,v in pairs(root) do
+    for k, v in pairs(root) do
         --print(k)
     end
 end
 
 function test_local_functions()
-    assert.equals(nil, new)
-    assert.equals(nil, _m_init)
-    assert.equals(nil, initializeEmptyBoard)
+    assert.is_nil(new)
+    assert.is_nil(_m_init)
+    assert.is_nil(initializeEmptyBoard)
 end
- 
+
 function test_WinPlayersFullRow()
-    state:setBoard(CROSS_WON_ROW_BOARD1);
+    state:setBoard(CROSS_WON_ROW_BOARD1)
     assert.is_true(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_ROW_BOARD2);
+    state:setBoard(CROSS_WON_ROW_BOARD2)
     assert.is_true(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_ROW_BOARD3);
+    state:setBoard(CROSS_WON_ROW_BOARD3)
     assert.is_true(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
 end
 
 function test_WinPlayersFullColumn()
-    state:setBoard(CROSS_WON_COLUMN_BOARD1);
+    state:setBoard(CROSS_WON_COLUMN_BOARD1)
     assert.is_true(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_COLUMN_BOARD2);
+    state:setBoard(CROSS_WON_COLUMN_BOARD2)
     assert.is_true(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_COLUMN_BOARD3);
+    state:setBoard(CROSS_WON_COLUMN_BOARD3)
     assert.is_true(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
 end
 
 function test_WinPlayersFullDiagonal()
-    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD1);
+    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD1)
     assert.is_false(state:specificPlayerWon(crossPlayer))
     assert.is_true(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD2);
+    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD2)
     assert.is_false(state:specificPlayerWon(crossPlayer))
     assert.is_true(state:specificPlayerWon(noughtPlayer))
 end
 
 function test_NonTerminalState()
-    state:setBoard(NON_TERMINAL_BOARD);
+    state:setBoard(NON_TERMINAL_BOARD)
     assert.is_false(state:specificPlayerWon(crossPlayer))
     assert.is_false(state:specificPlayerWon(noughtPlayer))
 end
@@ -160,16 +160,16 @@ end
 function test_applyValidAction()
     state:setBoard(NON_TERMINAL_BOARD)
     local expectedBoard = {
-        {'X', 'O', 'O'},
-        {'-', 'O', '-'},
-        {'X', 'X', '-'}
-    };
-    
+        {"X", "O", "O"},
+        {"-", "O", "-"},
+        {"X", "X", "-"}
+    }
+
     state:applyAction("12")
-    
+
     local actualBoard = state:getBoard()
-    for i=1,#expectedBoard do
-        for j=1,#expectedBoard[1] do
+    for i = 1, #expectedBoard do
+        for j = 1, #expectedBoard[1] do
             assert.equals(expectedBoard[i][j], actualBoard[i][j])
         end
     end
@@ -186,13 +186,13 @@ function test_applyInvalidAction()
 end
 
 function test_getAvailableActions()
-      state:setBoard(NON_TERMINAL_BOARD)
-      local availableActions = state:getAvailableActions()
-      assert.is_true(availableActions:contains("12"))
-      assert.is_true(availableActions:contains("21"))
-      assert.is_true(availableActions:contains("23"))
-      assert.is_true(availableActions:contains("33"))
-      assert.equals(4, state:getNumAvailableActions());
+    state:setBoard(NON_TERMINAL_BOARD)
+    local availableActions = state:getAvailableActions()
+    assert.is_true(availableActions:contains("12"))
+    assert.is_true(availableActions:contains("21"))
+    assert.is_true(availableActions:contains("23"))
+    assert.is_true(availableActions:contains("33"))
+    assert.equals(4, state:getNumAvailableActions())
 end
 
 function init()

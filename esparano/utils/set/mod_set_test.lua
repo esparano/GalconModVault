@@ -2,22 +2,22 @@ require("mod_assert")
 require("mod_set")
 
 function test_available_functions()
-    for k,v in pairs(_ENV) do
+    for k, v in pairs(_ENV) do
         --print(k)
     end
-    assert.not_equals(nil, Set)
-    assert.not_equals(nil, Set.add)
-    assert.not_equals(nil, Set.remove)
-    assert.not_equals(nil, Set.contains)
+    assert.not_nil(Set)
+    assert.not_nil(Set.add)
+    assert.not_nil(Set.remove)
+    assert.not_nil(Set.contains)
 end
 
 function test_local_functions()
-    assert.equals(nil, add)
-    assert.equals(nil, remove)
-    assert.equals(nil, contains)
+    assert.is_nil(add)
+    assert.is_nil(remove)
+    assert.is_nil(contains)
 end
 
-function test_constructor() 
+function test_constructor()
     local set = Set.new({4, 8, 6})
     set:add("asdf")
     assert.is_true(set:contains(4))
@@ -27,7 +27,7 @@ function test_constructor()
     assert.is_false(set:contains(346))
 end
 
-function test_add_remove_and_contains() 
+function test_add_remove_and_contains()
     local set = Set.new()
     assert.equals(0, set:size())
 
@@ -41,7 +41,7 @@ function test_add_remove_and_contains()
     assert.is_false(set:contains("asdf"))
 end
 
-function test_add_remove_and_contains_table() 
+function test_add_remove_and_contains_table()
     local set = Set.new()
     local t = {value = 1}
 
@@ -55,7 +55,7 @@ function test_add_remove_and_contains_table()
     assert.is_false(set:contains(t))
 end
 
-function test_diff() 
+function test_diff()
     local set = Set.new()
     set:add(5)
     set:add(1)
@@ -66,12 +66,12 @@ function test_diff()
 
     assert.is_true(left_diff:contains(5))
     assert.is_false(left_diff:contains(1))
-    
+
     assert.is_false(right_diff:contains(5))
     assert.is_false(right_diff:contains(1))
 end
 
-function test_diff_empty() 
+function test_diff_empty()
     local set = Set.new()
     set:add(5)
     set:add(1)
@@ -81,14 +81,14 @@ function test_diff_empty()
 
     assert.is_true(left_diff:contains(5))
     assert.is_true(left_diff:contains(1))
-    
+
     assert.is_false(right_diff:contains(5))
     assert.is_false(right_diff:contains(1))
 end
 
 function test_random_item()
     local set = Set.new()
-    assert.equals(nil, set:randomItem())
+    assert.is_nil(set:randomItem())
 
     set:add(5)
     set:add(7)
@@ -98,13 +98,13 @@ function test_random_item()
     assert.equals(5, set:size())
     local iterations = 1000
     counts = {}
-    for i=1,iterations do
+    for i = 1, iterations do
         local randomItem = set:randomItem()
         counts[randomItem] = counts[randomItem] or 0
         counts[randomItem] = counts[randomItem] + 1
     end
     local sum = 0
-    for item,count in pairs(counts) do
+    for item, count in pairs(counts) do
         assert.is_true(count > 140)
         sum = sum + count
     end
@@ -113,7 +113,7 @@ end
 
 function test_random_item_empty()
     local set = Set.new()
-    assert.equals(nil, set:randomItem())
+    assert.is_nil(set:randomItem())
 end
 
 function init()

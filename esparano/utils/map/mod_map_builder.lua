@@ -1,7 +1,7 @@
-function _mapgenhelper_init()
-    local module = {}
+function _module_init()
+    local MapBuilder = {}
 
-    local function createUser(n, team, neutral)
+    function MapBuilder.makeUser(n, team, neutral)
         return {
             is_user = true,
             n = n,
@@ -9,8 +9,8 @@ function _mapgenhelper_init()
             neutral = neutral
         }
     end
-    
-    local function createPlanet(n, x, y, r, s, p, owner)
+
+    function MapBuilder.makePlanet(n, x, y, r, s, p, owner)
         return {
             is_planet = true,
             n = n,
@@ -24,8 +24,8 @@ function _mapgenhelper_init()
             neutral = owner.neutral
         }
     end
-    
-    local function createFleet(n, syncId, x, y, r, s, owner, target)
+
+    function MapBuilder.makeFleet(n, syncId, x, y, r, s, owner, target)
         return {
             is_fleet = true,
             _n = n,
@@ -40,42 +40,42 @@ function _mapgenhelper_init()
         }
     end
 
-    function module.new(items)
+    function MapBuilder.new(items)
         local instance = {}
-        for k, v in pairs(module) do
+        for k, v in pairs(MapBuilder) do
             instance[k] = v
         end
         instance.items = {}
-        instance.nextN = 15 -- "item.n"s can be sparse, so ipairs shouldn't work
+        instance.nextN = 5000 -- "item.n"s can be sparse, so ipairs shouldn't work
         return instance
     end
 
-    function module:_addItem(item)
-        self.items[item.n] = item 
+    function MapBuilder:_addItem(item)
+        self.items[item.n] = item
         self.nextN = self.nextN + 1
         return item
     end
 
-    function module:createUser(neutral)
-        local o = createUser(self.nextN, self.nextN, neutral)
+    function MapBuilder:addUser(neutral)
+        local o = MapBuilder.makeUser(self.nextN, self.nextN, neutral)
         return self:_addItem(o)
     end
 
-    function module:createPlanet(x, y, r, s, p, owner)
-        local o = createPlanet(self.nextN, x, y, r, s, p, owner)
+    function MapBuilder:addPlanet(x, y, r, s, p, owner)
+        local o = MapBuilder.makePlanet(self.nextN, x, y, r, s, p, owner)
         return self:_addItem(o)
     end
 
-    function module:createFleet(x, y, r, s, owner, target)
-        local o = createFleet(self.nextN, self.nextN, x, y, r, s, owner, target)
+    function MapBuilder:addFleet(x, y, r, s, owner, target)
+        local o = MapBuilder.makeFleet(self.nextN, self.nextN, x, y, r, s, owner, target)
         return self:_addItem(o)
     end
 
-    function module:build()
+    function MapBuilder:build()
         return self.items
     end
 
-    return module
+    return MapBuilder
 end
-mapgenhelper = _mapgenhelper_init()
-_mapgenhelper_init = nil
+MapBuilder = _module_init()
+_module_init = nil

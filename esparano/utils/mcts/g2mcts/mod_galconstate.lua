@@ -1,95 +1,43 @@
-require("mod_galconplayer")
+require("mod_map_sim")
 require("mod_set")
 
 function _m_init()
     local GalconState = {}
 
-    local BOARD_SIZE = 3
-    local ACTION_ROW_POSITION = 0
-    local ACTION_COLUMN_POSITION = 1
-    local FINAL_ROUND = 9
+    local NULL_MOVE = -1
+    local SEND = "s"
+    local REDIRECT = "r"
 
-    GalconState.EMPTY = "-"
-    GalconState.CROSS = "X"
-    GalconState.NOUGHT = "O"
-
-    local function initializePlayers()
-        local players = {}
-        players[GalconState.CROSS] = GalconPlayer.new(GalconState.CROSS)
-        players[GalconState.NOUGHT] = GalconPlayer.new(GalconState.NOUGHT)
-        return players
-    end
-
-    local function initializeEmptyBoard()
-        local board = {}
-        for i = 1, BOARD_SIZE do
-            board[i] = {}
-            for j = 1, BOARD_SIZE do
-                board[i][j] = GalconState.EMPTY
-            end
+    local function split(str, delim)
+        local r = {}
+        for k in (str .. delim):gmatch("([^" .. delim .. "]*)" .. delim) do
+            r[#r + 1] = k
         end
-        return board
-    end
-
-    local function boardContainsPlayersFullRow(board, player)
-        for i = 1, BOARD_SIZE do
-            if
-                (board[i][1] == player:getMarker() and board[i][2] == player:getMarker() and
-                    board[i][3] == player:getMarker())
-             then
-                return true
-            end
-        end
-        return false
-    end
-
-    local function boardContainsPlayersFullColumn(board, player)
-        for i = 1, BOARD_SIZE do
-            local marker = player:getMarker()
-            local equal = true
-            for j = 1, BOARD_SIZE do
-                equal = equal and board[j][i] == marker
-            end
-            if equal then
-                return true
-            end
-        end
-        return false
-    end
-
-    local function rowFromAction(action)
-        return tonumber(string.sub(action, 1, 1))
-    end
-    local function columnFromAction(action)
-        return tonumber(string.sub(action, 2, 2))
-    end
-
-    local function validateUndoAction(action)
-        local row = rowFromAction(action)
-        local column = columnFromAction(action)
-        assert.is_true(1 <= row and row <= 3)
-        assert.is_true(1 <= column and column <= 3)
-    end
-
-    local function applyUndoAction(board, action)
-        local row = rowFromAction(action)
-        local column = columnFromAction(action)
-        board[row][column] = GalconState.EMPTY
-    end
-
-    function GalconState:undoAction(action)
-        validateUndoAction(action)
-        applyUndoAction(self._board, action)
-        self:selectNextPlayer()
-        return self
+        return r
     end
 
     local function doApplyAction(self, action)
-        local row = rowFromAction(action)
-        local column = columnFromAction(action)
-        self._board[row][column] = self:getCurrentAgent():getMarker()
+        -- Do nothing when switching players to simulate simultaneous actions?
+        -- TODO: send from planet, update planet shipcount
+        if action == NULL_MOVE then
+            return
+        end
+        local t = split(action, ",")
+        local type = t[1]
+        local from = self._map.items[t[2]]
+        local to = self._map.items[t[3]]
+        local perc = t[4]
+
+        if type == GalconState.SEND then
+            MapSim.send(self._map, from, to, perc)
+        elseif type == GalconState.REDIRECT then
+            MapSim.redirect(self._map, from, to)
+        else
+            error("UNRECOGNIZED ACTION TYPE")
+        end
     end
 
+    -- TODO: verify action is in possible actions, owned by player, enough ships, target exists.
     local function validateAction(self, action)
         assert.is_true(self:getAvailableActions():contains(action))
     end
@@ -97,89 +45,80 @@ function _m_init()
     function GalconState:applyAction(action)
         validateAction(self, action)
         doApplyAction(self, action)
-        self:selectNextPlayer()
+        -- TODO: don't simulate forward if owner is not the bot - simultaneous turns
+        MapSim.simulateForward(self._map)
+        self:_selectNextPlayer()
         return self
     end
 
-    function GalconState:setBoard(board)
-        local b = {}
-        for i = 1, #board do
-            b[i] = {}
-            for j = 1, #board[1] do
-                b[i][j] = board[i][j]
-            end
-        end
-        self._board = b
-    end
-
-    function GalconState:getBoard()
-        return self._board
+    function GalconState:_selectNextPlayer()
+        local tmp = self._currentAgent
+        self._currentAgent = self._previousAgent
+        self._previousAgent = tmp
     end
 
     function GalconState:getCurrentAgent()
-        return self._players[self._currentPlayerIndex]
+        return self._currentAgent
     end
 
     function GalconState:getPreviousAgent()
-        return self._players[self._previousPlayerIndex]
+        return self._previousAgent
     end
 
-    function GalconState:specificPlayerWon(player)
-        return TODO.TODO
+    function GalconState:getOppositeAgent(agent)
+        if agent == self.currentAgent then
+            return self.previousAgent
+        else
+            return currentAgent
+        end
     end
 
-    function GalconState:specificPlayerLost(player)
-        return TODO.TODO
+    function GalconState:specificPlayerWon(agent)
+        return self:specificPlayerLost(getOppositeAgent(agent))
     end
 
-    function GalconState:somePlayerWon()
-        return self:specificPlayerWon(self:getCurrentAgent()) or self:specificPlayerWon(self:getPreviousAgent())
+    function GalconState:specificPlayerLost(agent)
+        return self._map:totalProd(agent._n) == 0 and self._map:totalShips(agent._n) == 0
     end
 
     function GalconState:isTerminal()
-        return self:somePlayerWon()
+        return self:specificPlayerLost(self._currentAgent or self:specificPlayerLost(self._previousAgent))
     end
 
     function GalconState:skipCurrentAgent()
+        -- Isn't this wrong? Shouldn't this switch agents?
         return self
     end
 
-    function GalconState:selectNextPlayer()
-        local tmp = self._currentPlayerIndex
-        self._currentPlayerIndex = self._previousPlayerIndex
-        self._previousPlayerIndex = tmp
-    end
-
+    -- TODO: this is wrong or extremely inefficient
     function GalconState:getNumAvailableActions()
         return self:getAvailableActions():size()
     end
 
-    local function generateActionFromBoardPosition(i, j)
-        return "" .. i .. j
+    function GalconState.generateNullMove()
     end
 
+    function GalconState.generateSendAction(from, to, perc)
+        return SEND .. "," .. from.n .. "," .. to.n .. "," .. perc
+    end
+
+    function GalconState.generateRedirectAction(from, to)
+        return REDIRECT .. "," .. from.n .. "," .. to.n
+    end
+
+    -- TODO: eventually replace this with NN and prior probabilities
     function GalconState:getAvailableActions()
-        local availableActions = Set.new()
-        for i = 1, BOARD_SIZE do
-            for j = 1, BOARD_SIZE do
-                if self._board[i][j] == GalconState.EMPTY then
-                    local action = generateActionFromBoardPosition(i, j)
-                    availableActions:add(action)
-                end
-            end
-        end
-        return availableActions
+        return self._currentAgent:getAvailableActions(self._map)
     end
 
-    function GalconState.new(map, players)
+    function GalconState.new(map, currentAgent, previousAgent)
         local instance = {}
         for k, v in pairs(GalconState) do
             instance[k] = v
         end
         instance._map = map
-        instance._players = players
-        instance._currentPlayerIndex = GalconState.CROSS
-        instance._previousPlayerIndex = GalconState.NOUGHT
+        instance._currentAgent = currentAgent
+        instance._previousAgent = previousAgent
         return instance
     end
 

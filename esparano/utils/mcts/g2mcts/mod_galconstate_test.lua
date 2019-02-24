@@ -84,8 +84,8 @@ function before()
 end
 
 function test_available_functions()
-    assert.not_equals(nil, GalconState)
-    assert.not_equals(nil, GalconState.new)
+    assert.not_nil(GalconState)
+    assert.not_nil(GalconState.new)
     local root = GalconState.new()
     for k, v in pairs(root) do
         --print(k)
@@ -93,9 +93,9 @@ function test_available_functions()
 end
 
 function test_local_functions()
-    assert.equals(nil, new)
-    assert.equals(nil, _m_init)
-    assert.equals(nil, initializeEmptyBoard)
+    assert.is_nil(new)
+    assert.is_nil(_m_init)
+    assert.is_nil(initializeEmptyBoard)
 end
 
 function test_WinPlayersFullRow()
