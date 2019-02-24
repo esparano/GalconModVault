@@ -47,7 +47,10 @@ function _assert_init()
          then
             return
         end
-        assert.is_true(math.abs(expected - actual) <= epsilon, message)
+        assert.is_true(
+            math.abs(expected - actual) <= epsilon,
+            expected .. " was not within " .. epsilon .. " of " .. actual .. "; " .. (message ~= nil and message or "")
+        )
     end
 
     function assert.is_true(cond, message)
@@ -56,6 +59,14 @@ function _assert_init()
 
     function assert.is_false(cond, message)
         _equals_boolean(false, cond, message)
+    end
+
+    function assert.is_nil(obj, message)
+        assert.equals(nil, obj, message)
+    end
+
+    function assert.not_nil(obj, message)
+        assert.not_equals(nil, obj, message)
     end
 
     return assert

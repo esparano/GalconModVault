@@ -14,6 +14,7 @@ Galcon is a registered trademark of Phil Hassey
 For more information see http://www.galcon.com/
 ]]
 --------------------------------------------------------------------------------
+strict(true)
 if g2.headless == nil then
     require("mod_client") -- HACK: not a clean import, but it works
 end
@@ -164,108 +165,9 @@ function lobby_init()
             GAME.engine:next(GAME.modules.galcon)
         end
     end
-end 
+end
 --------------------------------------------------------------------------------
 function galcon_classic_init()
-    local sound = "sfx-ohyeah"
-    --g2.net_send("","sound",sound);
-    --g2.play_sound(sound)
-    
-    local G = GAME.galcon
-    math.randomseed(os.time())
-    
-    g2.game_reset();
-   
-    local o = g2.new_user("neutral",0x555555)
-    o.user_neutral = 1
-    o.ships_production_enabled = 0
-    --[[]
-    o.planet_style = json.encode(
-        {overdraw={ambient=true,addition=true,texture="a"},normal=true,lighting=true,texture="tex0"}
-    )
-    --]]
-    G.neutral = o
-    
-    local users = {}
-    G.users = users
-
-    local color = 0x000000
-    for uid,client in pairs(GAME.clients) do
-        if client.status == "play" then
-            local p = g2.new_user(client.name,client.color)
-            users[#users+1] = p
-            p.user_uid = client.uid
-            client.live = 0
-        end
-    end
-
-    local size_factor = 4
-    local sw = 480 * size_factor
-    local sh = 360 * size_factor
-
-    --[[]
-    local neutrals = 30
-    local sym = #users
-    local numPlanets = 40
-    local separation = 0
-    local midSeparation = 150
-    for i=1,numPlanets/sym do
-        local a = math.random(0,360)
-        local p = math.random(15,100)
-        local s = math.random(0,50)
-        local distance = math.random() * sw/2 + midSeparation
-        for j=1,sym do
-            local x = sw/2 + distance*math.cos(a*math.pi/180.0)/2.0
-            local y = sh/2 + distance*math.sin(a*math.pi/180.0)/2.0
-            if x > sw/2 then
-                x = x + separation 
-            else 
-                x = x - separation
-            end
-
-            g2.new_planet(o, x, y, p, s);
-            a = a + 360/sym
-        end
-    end
-   --]]
-    local a = 3 
-    local homes = {}
-    
-    for i,user in pairs(users) do
-        --user.fleet_v_factor = 2
-        --user.ships_production_factor = 1
-        --user.fleet_crash = 100
-        --user.planet_crash = 1
-        --user.fleet_color = math.random() * 0xff0000 + math.random() * 0x00ff00 + math.random() * 0x0000ff
-        --user.user_reveal = false
-        --user.ui_ships_show_mask = 0x1
-        --if (math.random() > 0.5) then
-            --user.fleet_color = 0x000000
-        --end
-        --user.ui_ships_show_mask = 0x0
-        -- 0xe
-
-        local x = sw/2 + (sw/2)*math.cos(a*math.pi/180.0)/2.0
-        local y = sh/2 + (sh/2)*math.sin(a*math.pi/180.0)/2.0
-        local home = g2.new_planet(user, x, y, 100, 100)
-        table.insert(homes, home)
-        a = a + 360/#users
-    end
-
-    --[
-    local map = generate_map(homes, 30, 1.1)
-    for _i,p in ipairs(map) do
-        g2.new_planet(o, p.position_x, p.position_y, p.ships_production, p.ships_value);
-    end
-    --]]
-    
-    g2.planets_settle(0,0,sw,sh)
-    g2.net_send("","sound","sfx-start");
-
-    local r = g2.search("planet")
-end
-
-function galcon_classic_init2()
     local G = GAME.galcon
     math.randomseed(os.time())
     
@@ -288,19 +190,12 @@ function galcon_classic_init2()
         end
     end
 
-    local size_factor = 1
-    local sw = 480 * size_factor
-    local sh = 320 * size_factor
-    --[[
-    for i=1,30/6 do
-        local x = math.random(0,sw)
-        local y = math.random(0,sh)
-        local p = math.random(15,100)
-        local s = math.random(0,50)
-        g2.new_planet(o, x, y, p, s)
-        g2.new_planet(o, sw-x, sh-y, p, s) 
-    end--]]
-
+    local sw = 480
+    local sh = 320
+    
+    for i=1,23 do
+        g2.new_planet( o, math.random(0,sw),math.random(0,sh), math.random(15,100), math.random(0,50))
+    end
     local a = math.random(0,360)
     
     for i,user in pairs(users) do
@@ -336,55 +231,20 @@ function most_production()
             best_v = v
             best_o = o
         end
-    end 
+    end
     return best_o
 end
 
 function galcon_stop(res)
     if res == true then
-            local o = most_production()
-        if o ~= nil then
-         net_send("","message",o.title_value.." conquered the galaxy")
-        end
+        local o = most_production()
+        net_send("","message",o.title_value.." conquered the galaxy")
     end
     g2.net_send("","sound","sfx-stop");
     GAME.engine:next(GAME.modules.lobby)
 end
 
 function galcon_classic_loop()
-    if math.random() > 0.1 then
-       -- g2.net_send("","sound","bricks-tink");
-      --  g2.play_sound("bricks-tink")
-    end
-    local G = GAME.galcon
-    for i,user in pairs(G.users) do
-        --user.fleet_v_factor = 1
-        --user.ships_production_factor = 1
-        --user.fleet_crash = 100
-        --user.planet_crash = 1
-        local planets={'normal','honeycomb','ice','terrestrial','gasgiant','craters','gaseous','lava',
-            normal={normal=true,lighting=true,texture="tex0"},
-            honeycomb={lighting=true,texture="tex13",normal=true},
-            ice={ambient=true,texture="tex3",drawback=true,alpha=.65,addition=true,lighting=true},
-            terrestrial={overdraw={addition=true,alpha=.5,reflection=true,texture="tex7w"},normal=true,lighting=true,texture="tex7"},
-            gasgiant={overdraw={texture="tex1",yaxis=true,alpha=.25,addition=true,lighting=true},normal=true,lighting=true,texture="tex9"},
-            craters={texture="tex12",normal=true,lighting=true,overdraw={texture="tex12b",yaxis=true,lighting=true,alpha=1,addition=true}},
-            lava={overdraw={ambient=true,addition=true,texture="tex5"},normal=true,lighting=true,texture="tex0"}
-        }
-        --user.planet_style=json.encode(planets.honeycomb)
-        --user.fleet_color = math.random() * 0xff0000 + math.random() * 0x00ff00 + math.random() * 0x0000ff
-    end
-    --[[
-    GAME.a = GAME.a or 0
-    GAME.a = GAME.a + 1
-    local vf = (math.sin(GAME.a*math.pi/180) + 1)
-    local items = g2.search("fleet")
-        o.fleet_v_factor = vf*40
-    end
-    --]]
-
-    --g2.new_label("LOSERS", 480*math.random(), 320*math.random())
-
     local G = GAME.galcon
     local r = count_production()
     local total = 0
@@ -491,73 +351,6 @@ function engine_init()
         GAME.modules.register:loop(t)
     end
 end
-
------ EXPERIMENTAL FAIR-MAP GENERATION -----
-
--- generate "num" neutrals fairly given an array of "homes"
-function generate_map(homes, num, tolerance)
-    local map
-    local horizon=20 -- how many seconds into the future fair map generation is optimized for
-    tolerance = tolerance or 1 -- 1 means maps are perfectly equal (not recommended), 1.1 means maps can differ by 0.1 "goodness"... lol
-    local min_map_value=10 -- higher values favor maps with larger, cheaper planets
-    
-    if gen_function == nil then map = standard_gen(num) else map = gen_function(num) end
-    
-    local values = {}
-    for i,home in ipairs(homes) do
-        values[i] = map_value(home, map)
-    end
-    local total_value = 0
-    for i,value in ipairs(values) do
-        total_value = total_value + value
-    end
-    local average_value = total_value/#values
-    local is_fair_map = true
-    
-    for i,value in ipairs(values) do
-        if value < min_map_value or math.abs(value/average_value) > tolerance or math.abs(average_value/value) > tolerance then
-            is_fair_map = false
-        end
-    end
-    if is_fair_map then return map else return generate_map(homes,num,tolerance*1.01,gen_function) end -- increase tolerance so the game doesn't freeze while trying to find a good map
-end   
-
--- standard map generation function
-function standard_gen(num)
-    local factor = 1.5
-    local pad = 50; local sw = 480*factor; local sh = 360*factor
-    local map = {}
-    for j=1,num do
-        map[j] = {position_x = math.random(pad,sw-pad),position_y = math.random(pad,sh-pad),ships_production = math.random(15,100),ships_value = math.random(0,50)}
-    end
-    return map
-end
-    
--- how "good" the map is relative to a players' home planet
-function map_value(home, map)
-    local horizon = 20 -- how many seconds into the future fair map generation is optimized for
-    local value = 0
-	for i,p in ipairs(map) do
-		local arrival_time = distance_to_time(home:distance(p))
-		-- Heuristic#1: represents the number of net ships taking this planet would yield GLOBAL.horizon seconds in the future	
-		if time_to_break_even(p, arrival_time) < horizon then
-		    local net_ships = -p.ships_value + (horizon - arrival_time) * p.ships_production / 50.0
-		    value = value + net_ships
-		end
-    end
-    return value
-end
-		    
--- if a user were to attack this planet, how long would it take
--- for the user to break even on ship investment?
-function time_to_break_even(p, time_overhead)
-	return p.ships_value / (p.ships_production / 50.0) + time_overhead
-end		    
-
--- "Time-distance" for a length distance
-function distance_to_time(distance)
-	return distance/40
-end
 --------------------------------------------------------------------------------
 function mod_init()
     global("GAME")
@@ -586,10 +379,6 @@ function net_send(uid,mtype,mvalue) -- HACK - to make headed clients work
     g2.net_send(uid,mtype,mvalue)
 end
 --------------------------------------------------------------------------------
------ GAMEMODE-SPECIFIC INIT FUNCITONS -----
-
 mod_init()
-
-
-
-
+print (g2.name)
+print(g2.uid)
