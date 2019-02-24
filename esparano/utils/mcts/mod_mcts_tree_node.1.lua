@@ -1,5 +1,4 @@
 require("mod_set")
-require("mod_assert")
 
 function _m_init()
 local MctsTreeNode = {}

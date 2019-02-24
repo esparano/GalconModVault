@@ -1,19 +1,20 @@
 require("mod_assert")
 require("mod_testmapgen")
-require("mod_map_wrapper")
+require("mod_map_helper")
 require("mod_profiler")
 
 local m
 local p
 function before_each()
     local items = genMap()
-    m = Map.new(items)
+    assert.not_equals(0, #items)
+    m = map.new(items)
     p = profiler.new()
     p:profile(m)
 end
 
 function test_available_functions()
-    assert.not_nil(Map)
+    assert.not_equals(nil, map)
 end
 
 function test_totalShips_memoization()
@@ -37,13 +38,13 @@ end
 function test_totalShips_ownerId_memoization()
     local users = m:getUserList()
     local total = 0
-    for _, u in ipairs(users) do
+    for _,u in ipairs(users) do
         total = total + m:totalShips(u.n)
     end
     assert.equals_epsilon(m:totalShips(), total, 0.0001)
     assert.equals(4, p:getN(m, "getPlanetList"))
 
-    for _, u in pairs(users) do
+    for _,u in pairs(users) do
         total = total + m:totalShips(u.n)
     end
     m:totalShips()
@@ -53,13 +54,13 @@ end
 function test_totalProd_ownerId_memoization()
     local users = m:getUserList()
     local total = 0
-    for _, u in ipairs(users) do
+    for _,u in ipairs(users) do
         total = total + m:totalProd(u.n)
     end
     assert.equals_epsilon(m:totalProd(), total, 0.0001)
     assert.equals(4, p:getN(m, "getPlanetList"))
 
-    for _, u in pairs(users) do
+    for _,u in pairs(users) do
         total = total + m:totalProd(u.n)
     end
     m:totalProd()

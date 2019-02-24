@@ -3,8 +3,8 @@ require("mod_memoize")
 -- TODO: documentation
 -- Precalculates things for speeding up future calculations
 -- Provides API for quickly and efficiently accessing aspects about the map
-function _module_init()
-    local Map = {}
+function _map_init()
+    local map = {}
 
     local cachedFunctions = {
         "getPlanetList",
@@ -15,9 +15,9 @@ function _module_init()
         "totalShips"
     }
 
-    function Map.new(items)
+    function map.new(items)
         local instance = {}
-        for k, v in pairs(Map) do
+        for k, v in pairs(map) do
             instance[k] = v
         end
 
@@ -33,7 +33,7 @@ function _module_init()
         return instance
     end
 
-    function Map:_resetCaches()
+    function map:_resetCaches()
         for _, s in pairs(cachedFunctions) do
             local t = self.caches[s]
             for k in pairs(t) do
@@ -52,13 +52,13 @@ function _module_init()
         return matches
     end
 
-    function Map:update(items)
+    function map:update(items)
         self.items = items
         self:_resetCaches()
     end
 
     -- TODO: refactor searching for planets/users/etc.
-    function Map:getPlanetList(ownerId)
+    function map:getPlanetList(ownerId)
         return searchItems(
             self.items,
             function(item)
@@ -67,17 +67,8 @@ function _module_init()
         )
     end
 
-    function Map:getFleetList(ownerId)
-        return searchItems(
-            self.items,
-            function(item)
-                return item.is_fleet and (ownerId == nil or ownerId == item.owner)
-            end
-        )
-    end
-
     -- TODO: test
-    function Map:getPlanetAndFleetList(ownerId)
+    function map:getPlanetAndFleetList(ownerId)
         return searchItems(
             self.items,
             function(item)
@@ -86,7 +77,7 @@ function _module_init()
         )
     end
 
-    function Map:getUserList(includeNeutral)
+    function map:getUserList(includeNeutral)
         if includeNeutral == nil then
             includeNeutral = true
         end
@@ -98,7 +89,7 @@ function _module_init()
         )
     end
 
-    function Map:getNeutralUser()
+    function map:getNeutralUser()
         local users = self:getUserList()
         for _, u in ipairs(users) do
             if u.neutral then
@@ -117,15 +108,15 @@ function _module_init()
     end
 
     -- playerId is optional
-    function Map:totalProd(ownerId)
+    function map:totalProd(ownerId)
         return sumProperty(self:getPlanetList(ownerId), "production")
     end
 
-    function Map:totalShips(ownerId)
+    function map:totalShips(ownerId)
         return sumProperty(self:getPlanetList(ownerId), "ships")
     end
 
-    return Map
+    return map
 end
-Map = _module_init()
-_module_init = nil
+map = _map_init()
+_map_init = nil

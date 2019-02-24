@@ -1,56 +1,48 @@
-require("mod_galconstate")
-require("mod_eval")
-
 function _m_init()
     local GalconPlayer = {}
 
-    local MAX_ACTIONS_TO_GENERATE = 10
-
-    function GalconPlayer.new(user)
+    function GalconPlayer.new(marker)
         local instance = {}
         for k, v in pairs(GalconPlayer) do
             instance[k] = v
         end
-        instance._user = user
+        instance._marker = marker
         return instance
     end
 
-    function GalconPlayer:getAvailableActions(state)
-        local availableActions = Set.new()
-
-        availableActions:add(GalconState.generateNullMove())
-        for i = 2, MAX_ACTIONS_TO_GENERATE do
-            local from_options = self._map:getPlanetList(self._currentAgent._n)
-            local to_options = self._map:getPlanetList()
-            local from = from_options[math.random(1, #from_options)]
-            local target = to_options[math.random(1, #to_options)]
-
-            -- Make sure planet doesn't send to itself
-            while from == target do
-                target = to_options[math.random(1, #to_options)]
+    -- TODO: test this
+    local function pickFromAvailableActions(state)
+        local availableActions = state:getAvailableActions()
+        for action in pairs(availableActions:getValues()) do
+            state:applyAction(action)
+            local actionEndsGame = state:isTerminal()
+            state:undoAction(action)
+            if actionEndsGame then
+                return action
             end
-
-            -- s for send, r for redirect
-            local action = GalconState.generateSendAction(from, to, 100)
-            availableActions:add(action)
         end
-
-        return availableActions
+        return availableActions:randomItem()
     end
 
     function GalconPlayer:getTerminalStateByPerformingSimulationFromState(state)
-        -- simply return the state and use the predicted evaluation by the NN as the eval
-        -- Or maybe land fleets, or sim forwards X seconds, then eval? who knows.
+        while not state:isTerminal() do
+            local action = pickFromAvailableActions(state)
+            state:applyAction(action)
+        end
         return state
     end
 
-    function GalconPlayer:getRewardFromState(state)
-        if state:specificPlayerWon(self) then
+    function GalconPlayer:getMarker()
+        return self._marker
+    end
+
+    function GalconPlayer:getRewardFromTerminalState(terminalState)
+        if terminalState:specificPlayerWon(self) then
             return 1
-        elseif state:specificPlayerLost(self) then
-            return 0
+        elseif terminalState:isDraw() then
+            return 0.5
         end
-        return eval_predict_with_map(state._map, self._user)
+        return 0
     end
 
     return GalconPlayer

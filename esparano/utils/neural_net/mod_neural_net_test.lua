@@ -5,7 +5,7 @@ function before_each()
 end
 
 function test_available_functions()
-    assert.not_nil(nn)
+    assert.not_equals(nil, nn)
 end
 
 function test_local_functions()
