@@ -106,7 +106,7 @@ function _m_init()
         return REDIRECT .. "," .. from.n .. "," .. to.n
     end
 
-    -- TODO: eventually replace this with NN and prior probabilities
+    -- TODO: eventually replace this with NN and prior  probabilities
     function GalconState:getAvailableActions()
         return self._currentAgent:getAvailableActions(self._map)
     end
