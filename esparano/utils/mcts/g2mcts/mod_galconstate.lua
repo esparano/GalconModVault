@@ -1,37 +1,45 @@
 require("mod_map_sim")
 require("mod_set")
+require("mod_assert")
 
 function _m_init()
     local GalconState = {}
 
-    local NULL_MOVE = -1
-    local SEND = "s"
-    local REDIRECT = "r"
+    local NEXT_STATE_ID = 0
+    GalconState.NULL_MOVE = "n"
+    GalconState.SEND = "s"
+    GalconState.REDIRECT = "r"
 
     local function split(str, delim)
         local r = {}
-        for k in (str .. delim):gmatch("([^" .. delim .. "]*)" .. delim) do
+        local result = string.gmatch(str .. delim, "([^" .. delim .. "]*)" .. delim)
+        for k in result do
             r[#r + 1] = k
         end
         return r
     end
 
-    local function doApplyAction(self, action)
+    function GalconState.parseMove(str, map)
+        local t = split(str, ",")
+        local move = {}
+        move.actionType = t[1]
+        move.from = map._items[tonumber(t[2])]
+        move.to = map._items[tonumber(t[3])]
+        move.perc = tonumber(t[4])
+        return move
+    end
+
+    function GalconState:_doApplyAction(str)
         -- Do nothing when switching players to simulate simultaneous actions?
         -- TODO: send from planet, update planet shipcount
-        if action == NULL_MOVE then
+        if str == GalconState.NULL_MOVE then
             return
         end
-        local t = split(action, ",")
-        local type = t[1]
-        local from = self._map.items[t[2]]
-        local to = self._map.items[t[3]]
-        local perc = t[4]
-
-        if type == GalconState.SEND then
-            MapSim.send(self._map, from, to, perc)
-        elseif type == GalconState.REDIRECT then
-            MapSim.redirect(self._map, from, to)
+        local move = GalconState.parseMove(str, self._map)
+        if move.actionType == GalconState.SEND then
+            MapSim.send(self._map, move.from, move.to, move.perc)
+        elseif move.actionType == GalconState.REDIRECT then
+            MapSim.redirect(self._map, move.from, move.to)
         else
             error("UNRECOGNIZED ACTION TYPE")
         end
@@ -39,14 +47,16 @@ function _m_init()
 
     -- TODO: verify action is in possible actions, owned by player, enough ships, target exists.
     local function validateAction(self, action)
-        assert.is_true(self:getAvailableActions():contains(action))
+        -- This is commented out because the state on which getAvailableActions() was called is not the same as this copy of that state.
+        -- Thus calling getAvailableActions for this state may not return the same list.
+        --assert.is_true(self:getAvailableActions():contains(action), "availableActions should contain action")
     end
 
     function GalconState:applyAction(action)
         validateAction(self, action)
-        doApplyAction(self, action)
+        self:_doApplyAction(action)
         -- TODO: don't simulate forward if owner is not the bot - simultaneous turns
-        MapSim.simulateForward(self._map)
+        MapSim.simulate(self._map, 10)
         self:_selectNextPlayer()
         return self
     end
@@ -66,15 +76,15 @@ function _m_init()
     end
 
     function GalconState:getOppositeAgent(agent)
-        if agent == self.currentAgent then
-            return self.previousAgent
+        if agent == self._currentAgent then
+            return self._previousAgent
         else
-            return currentAgent
+            return self._currentAgent
         end
     end
 
     function GalconState:specificPlayerWon(agent)
-        return self:specificPlayerLost(getOppositeAgent(agent))
+        return self:specificPlayerLost(self:getOppositeAgent(agent))
     end
 
     function GalconState:specificPlayerLost(agent)
@@ -82,10 +92,11 @@ function _m_init()
     end
 
     function GalconState:isTerminal()
-        return self:specificPlayerLost(self._currentAgent or self:specificPlayerLost(self._previousAgent))
+        return self:specificPlayerLost(self._currentAgent) or self:specificPlayerLost(self._previousAgent)
     end
 
     function GalconState:skipCurrentAgent()
+        error("skipCurrentAgent called")
         -- Isn't this wrong? Shouldn't this switch agents?
         return self
     end
@@ -96,19 +107,20 @@ function _m_init()
     end
 
     function GalconState.generateNullMove()
+        return GalconState.NULL_MOVE
     end
 
     function GalconState.generateSendAction(from, to, perc)
-        return SEND .. "," .. from.n .. "," .. to.n .. "," .. perc
+        return GalconState.SEND .. "," .. from.n .. "," .. to.n .. "," .. perc
     end
 
     function GalconState.generateRedirectAction(from, to)
-        return REDIRECT .. "," .. from.n .. "," .. to.n
+        return GalconState.REDIRECT .. "," .. from.n .. "," .. to.n
     end
 
-    -- TODO: eventually replace this with NN and prior  probabilities
+    -- TODO: eventually replace this with NN and prior probabilities
     function GalconState:getAvailableActions()
-        return self._currentAgent:getAvailableActions(self._map)
+        return self._currentAgent:getAvailableActions(self)
     end
 
     function GalconState.new(map, currentAgent, previousAgent)
@@ -119,6 +131,9 @@ function _m_init()
         instance._map = map
         instance._currentAgent = currentAgent
         instance._previousAgent = previousAgent
+        -- for debugging purposes
+        instance._id = NEXT_STATE_ID
+        NEXT_STATE_ID = NEXT_STATE_ID + 1
         return instance
     end
 

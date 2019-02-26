@@ -1,86 +1,19 @@
 require("mod_assert")
+require("mod_testmapgen")
+require("mod_map_wrapper")
+require("mod_galconplayer")
 require("mod_galconstate")
 
-local EMPTY_BOARD = {
-    {"-", "-", "-"},
-    {"-", "-", "-"},
-    {"-", "-", "-"}
-}
-
-local NON_TERMINAL_BOARD = {
-    {"X", "-", "O"},
-    {"-", "O", "-"},
-    {"X", "X", "-"}
-}
-
-local DRAW_BOARD = {
-    {"X", "O", "X"},
-    {"X", "O", "X"},
-    {"O", "X", "O"}
-}
-
-local NOUGHT_WON_DIAGONAL_BOARD1 = {
-    {"O", "-", "-"},
-    {"X", "O", "X"},
-    {"-", "-", "O"}
-}
-
-local NOUGHT_WON_DIAGONAL_BOARD2 = {
-    {"-", "-", "O"},
-    {"X", "O", "X"},
-    {"O", "-", "-"}
-}
-
-local NOUGHT_WON_FULL_BOARD = {
-    {"X", "O", "O"},
-    {"X", "O", "X"},
-    {"O", "X", "O"}
-}
-
-local CROSS_WON_COLUMN_BOARD1 = {
-    {"X", "O", "-"},
-    {"X", "O", "-"},
-    {"X", "-", "O"}
-}
-
-local CROSS_WON_COLUMN_BOARD2 = {
-    {"O", "X", "-"},
-    {"-", "X", "O"},
-    {"-", "X", "O"}
-}
-
-local CROSS_WON_COLUMN_BOARD3 = {
-    {"O", "O", "X"},
-    {"-", "-", "X"},
-    {"-", "O", "X"}
-}
-
-local CROSS_WON_ROW_BOARD1 = {
-    {"X", "X", "X"},
-    {"O", "-", "-"},
-    {"O", "-", "O"}
-}
-
-local CROSS_WON_ROW_BOARD2 = {
-    {"-", "O", "-"},
-    {"X", "X", "X"},
-    {"-", "O", "O"}
-}
-
-local CROSS_WON_ROW_BOARD3 = {
-    {"-", "O", "-"},
-    {"O", "-", "-"},
-    {"X", "X", "X"}
-}
-
+local agent
+local enemyAgent
 local state
-local noughtPlayer
-local crossPlayer
-
-function before()
-    state = GalconState.new()
-    crossPlayer = state:getCurrentAgent()
-    noughtPlayer = state:getPreviousAgent()
+local map
+function before_each()
+    map = Map.new(genMap())
+    local users = map:getUserList(false)
+    agent = GalconPlayer.new(users[1].n)
+    enemyAgent = GalconPlayer.new(users[2].n)
+    state = GalconState.new(map, agent, enemyAgent)
 end
 
 function test_available_functions()
@@ -95,113 +28,33 @@ end
 function test_local_functions()
     assert.is_nil(new)
     assert.is_nil(_m_init)
-    assert.is_nil(initializeEmptyBoard)
 end
 
-function test_WinPlayersFullRow()
-    state:setBoard(CROSS_WON_ROW_BOARD1)
-    assert.is_true(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_ROW_BOARD2)
-    assert.is_true(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_ROW_BOARD3)
-    assert.is_true(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
+function test_doApplyAction()
+    local from = map:getPlanetList(agent._n)[1]
+    local to = map:getPlanetList(map:getNeutralUser().n)[1]
+    local action = "s," .. from.n .. "," .. to.n .. ",100"
+    state:_doApplyAction(action)
+    assert.equals(0, from.ships)
+    assert.equals(1, #map:getFleetList())
 end
 
-function test_WinPlayersFullColumn()
-    state:setBoard(CROSS_WON_COLUMN_BOARD1)
-    assert.is_true(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_COLUMN_BOARD2)
-    assert.is_true(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(CROSS_WON_COLUMN_BOARD3)
-    assert.is_true(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
+function test_generateSendAction()
+    local expected = "s,4,7,75"
+    local actual = state.generateSendAction({n = 4}, {n = 7}, 75)
+    assert.equals(expected, actual)
 end
 
-function test_WinPlayersFullDiagonal()
-    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD1)
-    assert.is_false(state:specificPlayerWon(crossPlayer))
-    assert.is_true(state:specificPlayerWon(noughtPlayer))
-    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD2)
-    assert.is_false(state:specificPlayerWon(crossPlayer))
-    assert.is_true(state:specificPlayerWon(noughtPlayer))
+function test_generateRedirectAction()
+    local expected = "r,4,7"
+    local actual = state.generateRedirectAction({n = 4}, {n = 7})
+    assert.equals(expected, actual)
 end
 
-function test_NonTerminalState()
-    state:setBoard(NON_TERMINAL_BOARD)
-    assert.is_false(state:specificPlayerWon(crossPlayer))
-    assert.is_false(state:specificPlayerWon(noughtPlayer))
-end
-
-function test_IsDraw()
-    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD2)
-    assert.is_false(state:isDraw())
-    state:setBoard(DRAW_BOARD)
-    assert.is_true(state:isDraw())
-    state:setBoard(NOUGHT_WON_FULL_BOARD)
-    assert.is_false(state:isDraw())
-end
-
-function test_IsTerminal()
-    state:setBoard(EMPTY_BOARD)
-    assert.is_false(state:isTerminal())
-    state:setBoard(NON_TERMINAL_BOARD)
-    assert.is_false(state:isTerminal())
-    state:setBoard(NOUGHT_WON_DIAGONAL_BOARD2)
-    assert.is_true(state:isTerminal())
-    state:setBoard(DRAW_BOARD)
-    assert.is_true(state:isTerminal())
-end
-
-function test_applyValidAction()
-    state:setBoard(NON_TERMINAL_BOARD)
-    local expectedBoard = {
-        {"X", "O", "O"},
-        {"-", "O", "-"},
-        {"X", "X", "-"}
-    }
-
-    state:applyAction("12")
-
-    local actualBoard = state:getBoard()
-    for i = 1, #expectedBoard do
-        for j = 1, #expectedBoard[1] do
-            assert.equals(expectedBoard[i][j], actualBoard[i][j])
-        end
-    end
-end
-
-function test_applyInvalidAction()
-    state:setBoard(NON_TERMINAL_BOARD)
-    state:applyAction("12")
-    state:applyAction("21")
-    state:applyAction("23")
-    state:applyAction("33")
-    print("should fail validation:")
-    state:applyAction("13")
-end
-
-function test_getAvailableActions()
-    state:setBoard(NON_TERMINAL_BOARD)
-    local availableActions = state:getAvailableActions()
-    assert.is_true(availableActions:contains("12"))
-    assert.is_true(availableActions:contains("21"))
-    assert.is_true(availableActions:contains("23"))
-    assert.is_true(availableActions:contains("33"))
-    assert.equals(4, state:getNumAvailableActions())
-end
-
-function init()
-end
-
-function loop(t)
-end
-
-function event(e)
+function test_generateNullMove()
+    local expected = GalconState.NULL_MOVE
+    local actual = state.generateNullMove()
+    assert.equals(expected, actual)
 end
 
 require("mod_test_runner")

@@ -2,6 +2,22 @@ require("mod_eval")
 require("mod_memoize")
 require("mod_assert")
 
+-- search list for the best match by greatest result
+local function find(Q, f)
+    local r, v
+    for _, o in pairs(Q) do
+        local _v = f(o)
+        if _v and ((not r) or _v > v) then
+            r, v = o, _v
+        end
+    end
+    return r
+end
+-- return distance between planets
+local function dist(a, b)
+    return ((b.x - a.x) ^ 2 + (b.y - a.y) ^ 2) ^ 0.5
+end
+
 function _m_init()
     local GalconPlayer = {}
 
@@ -38,21 +54,28 @@ function _m_init()
         sanityChecks(self, state)
         local availableActions = Set.new()
 
-        --availableActions:add(state.generateNullMove())
-        for i = 1, MAX_ACTIONS_TO_GENERATE do
-            local from_options = state._map:getPlanetList(self._n)
-            local to_options = state._map:getPlanetList()
-            local from = from_options[math.random(1, #from_options)]
-            local to = to_options[math.random(1, #to_options)]
+        availableActions:add(state.generateNullMove())
 
-            -- Make sure planet doesn't send to itself
-            while from == to do
-                to = to_options[math.random(1, #to_options)]
+        -- find a source planet
+        local from_options = state._map:getPlanetList(self._n)
+        for i, from in ipairs(from_options) do
+            if from.ships >= 15 then
+                -- find a target planet
+                local to_options = state._map:getPlanetList()
+                local to =
+                    find(
+                    to_options,
+                    function(o)
+                        if o.n ~= from.n then
+                            return o.production - o.ships - 0.2 * dist(from, o)
+                        end
+                    end
+                )
+
+                -- s for send, r for redirect
+                local action = state.generateSendAction(from, to, 100)
+                availableActions:add(action)
             end
-
-            -- s for send, r for redirect
-            local action = state.generateSendAction(from, to, 100)
-            availableActions:add(action)
         end
 
         return availableActions
