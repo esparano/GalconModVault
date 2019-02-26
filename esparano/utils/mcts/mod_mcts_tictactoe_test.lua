@@ -69,9 +69,9 @@ end
 
 function playOneTicTacToeGame(mcts, state)
     while not state:isTerminal() do
-        mcts:startUtcSearch(state, EXPLORATION_PARAMETER)
+        mcts:startUtcSearch(state)
         for i = 1, NUM_ITERATIONS do
-            mcts:nextIteration()
+            mcts:nextIteration(EXPLORATION_PARAMETER)
         end
         local chosenAction = mcts:finish()
         state:applyAction(chosenAction)

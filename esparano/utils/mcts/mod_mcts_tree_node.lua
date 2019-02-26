@@ -51,6 +51,10 @@ function _m_init()
         return self._state:isTerminal()
     end
 
+    function MctsTreeNode:getCurrentAgent()
+        return self._state:getCurrentAgent()
+    end
+
     function MctsTreeNode:getPreviousAgent()
         return self._state:getPreviousAgent()
     end
@@ -82,6 +86,7 @@ function _m_init()
         return childNode
     end
 
+    -- TODO: this is weird
     function MctsTreeNode:addNewChildWithoutAction()
         local childState = self:getDeepStateClone()
         childState:skipCurrentAgent()
@@ -95,7 +100,7 @@ function _m_init()
     end
 
     function MctsTreeNode:addNewChildFromAction(action)
-        assert.is_true(self:getUntriedActions():contains(action), "ERROR: Action was invalid or already tried")
+        assert.is_true(self:getUntriedActions():contains(action), "ERROR: Action was already tried")
         local childNodeState = self:getNewStateFromAction(action)
         return self:appendNewChildInstance(childNodeState, action)
     end
@@ -115,8 +120,6 @@ function _m_init()
         return triedActions
     end
 
-    -- TODO: this doesn't make any sense because clonefunc doesn't necessarily
-    -- return a deep clone
     function MctsTreeNode:getDeepStateClone()
         return self._cloneFunc(self._state)
     end

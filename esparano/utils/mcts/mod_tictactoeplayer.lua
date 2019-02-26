@@ -24,7 +24,11 @@ function _m_init()
         return availableActions:randomItem()
     end
 
-    function TicTacToePlayer:getTerminalStateByPerformingSimulationFromState(state)
+    function TicTacToePlayer:requiresDeepCopyToSimulate(state)
+        return true
+    end
+
+    function TicTacToePlayer:simulateUntilTerminal(state)
         while not state:isTerminal() do
             local action = pickFromAvailableActions(state)
             state:applyAction(action)

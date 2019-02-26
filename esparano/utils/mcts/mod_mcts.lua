@@ -72,9 +72,11 @@ function _m_init()
     end
 
     local function getTerminalStateFromDefaultPolicy(node, agentInvoking)
-        -- Possibly unnecessary depending on the behavior of the simulation
-        local nodesStateClone = node:getDeepStateClone()
-        return agentInvoking:getTerminalStateByPerformingSimulationFromState(nodesStateClone)
+        local stateToSimulate = node._state
+        if agentInvoking:requiresDeepCopyToSimulate(stateToSimulate) then
+            stateToSimulate = node:getDeepStateClone()
+        end
+        return agentInvoking:simulateUntilTerminal(stateToSimulate)
     end
 
     local function backPropagate(node, state)
@@ -92,15 +94,13 @@ function _m_init()
         return bestChildWithoutExploration:getPrevAction()
     end
 
-    function Mcts:startUtcSearch(state, explorationParameter)
-        self._explorationParameter = explorationParameter
+    function Mcts:startUtcSearch(state)
         self._rootNode = MctsTreeNode.new(state, self._cloneFunc)
-        self._state = state
     end
 
-    function Mcts:nextIteration()
-        local selectedChildNode = treePolicy(self._rootNode, self._explorationParameter)
-        local terminalState = getTerminalStateFromDefaultPolicy(selectedChildNode, self._state:getCurrentAgent())
+    function Mcts:nextIteration(explorationParameter)
+        local selectedChildNode = treePolicy(self._rootNode, explorationParameter)
+        local terminalState = getTerminalStateFromDefaultPolicy(selectedChildNode, selectedChildNode:getCurrentAgent())
         backPropagate(selectedChildNode, terminalState)
     end
 

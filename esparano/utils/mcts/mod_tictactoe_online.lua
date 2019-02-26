@@ -200,16 +200,21 @@ end
 function update_stats()
     GAME.total = GAME.total + 1
     local stats = {}
-    for name,total in pairs(GAME.wins) do
-        stats[#stats+1] = {name,total}
+    for name, total in pairs(GAME.wins) do
+        stats[#stats + 1] = {name, total}
     end
-    table.sort(stats,function(a,b) return a[2] > b[2] end)
+    table.sort(
+        stats,
+        function(a, b)
+            return a[2] > b[2]
+        end
+    )
     local info = ""
-    for i,item in ipairs(stats) do
+    for i, item in ipairs(stats) do
         info = info .. item[1] .. ":" .. tostring(item[2]) .. "  "
     end
     local function gprint(msg)
-        print("["..tostring(GAME.total).."] "..msg)
+        print("[" .. tostring(GAME.total) .. "] " .. msg)
     end
     gprint(info)
 end
@@ -297,7 +302,7 @@ function galcon_stop(winner_user, aborted)
         net_send("", "message", "Game drawn")
         update_stats()
     end
-   
+
     g2.net_send("", "sound", "sfx-stop")
     GAME.engine:next(GAME.modules.lobby)
 end
@@ -383,9 +388,9 @@ function galcon_classic_loop(t)
     if G.enemy_planet.ships_value == 1 then
         local EXPLORATION_PARAMETER = 0.4
         local NUM_ITERATIONS = get_num_iterations()
-        G.mcts:startUtcSearch(G.state, EXPLORATION_PARAMETER)
+        G.mcts:startUtcSearch(G.state)
         for i = 1, NUM_ITERATIONS do
-            G.mcts:nextIteration()
+            G.mcts:nextIteration(EXPLORATION_PARAMETER)
         end
         local chosenAction = G.mcts:finish()
         local chosenPlanet = G.grid_planets[chosenAction]
