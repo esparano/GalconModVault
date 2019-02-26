@@ -45,34 +45,34 @@ function _module_init()
         for k, v in pairs(MapBuilder) do
             instance[k] = v
         end
-        instance.items = {}
-        instance.nextN = 5000 -- "item.n"s can be sparse, so ipairs shouldn't work
+        instance._items = {}
+        instance._nextN = 5000 -- "item.n"s can be sparse, so ipairs shouldn't work
         return instance
     end
 
     function MapBuilder:_addItem(item)
-        self.items[item.n] = item
-        self.nextN = self.nextN + 1
+        self._items[item.n] = item
+        self._nextN = self._nextN + 1
         return item
     end
 
     function MapBuilder:addUser(neutral)
-        local o = MapBuilder.makeUser(self.nextN, self.nextN, neutral)
+        local o = MapBuilder.makeUser(self._nextN, self._nextN, neutral)
         return self:_addItem(o)
     end
 
     function MapBuilder:addPlanet(x, y, r, s, p, owner)
-        local o = MapBuilder.makePlanet(self.nextN, x, y, r, s, p, owner)
+        local o = MapBuilder.makePlanet(self._nextN, x, y, r, s, p, owner)
         return self:_addItem(o)
     end
 
     function MapBuilder:addFleet(x, y, r, s, owner, target)
-        local o = MapBuilder.makeFleet(self.nextN, self.nextN, x, y, r, s, owner, target)
+        local o = MapBuilder.makeFleet(self._nextN, self._nextN, x, y, r, s, owner, target)
         return self:_addItem(o)
     end
 
     function MapBuilder:build()
-        return self.items
+        return self._items
     end
 
     return MapBuilder

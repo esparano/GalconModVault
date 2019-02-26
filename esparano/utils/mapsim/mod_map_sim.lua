@@ -39,14 +39,13 @@ function _module_init()
     local NEW_FLEET_N = 10000
 
     function MapSim.send(map, from, to, perc)
-        map.dirty = true
         -- TODO: min 1 ship, rounding? etc.
         local numToSend = math.min(from.ships * perc / 100, from.ships)
         -- TODO: lots of asserts to make sure all this is valid
         from.ships = math.max(from.ships - numToSend, 0)
 
         -- TODO: fleet radius estimation
-        local fromOwner = map.items[from.owner]
+        local fromOwner = map._items[from.owner]
         local xSpawnOffset, ySpawnOffset = getVectorComponents(angle(from, to), from.r)
         local createdFleet =
             MapBuilder.makeFleet(
@@ -60,7 +59,7 @@ function _module_init()
             to
         )
         -- TODO: make sure this doesn't overwrite an object
-        map.items[createdFleet.n] = createdFleet
+        map._items[createdFleet.n] = createdFleet
         NEW_FLEET_N = NEW_FLEET_N + 1
 
         -- TODO: optimize this?
@@ -71,12 +70,14 @@ function _module_init()
 
     function MapSim.redirect(map, from, to)
         from.target = to.n
+        -- not necessary at the moment but might be some day?
+        map:_resetCaches()
     end
 
     -- TODO: gradual fleet landing
     -- land the fleet, even if it's far away
     function MapSim.land(map, fleet)
-        local target = map.items[fleet.target]
+        local target = map._items[fleet.target]
 
         -- update ships as fleet lands on planet
         if fleet.owner == target.owner then
@@ -94,7 +95,7 @@ function _module_init()
             end
         end
 
-        map.items[fleet.n] = nil
+        map._items[fleet.n] = nil
 
         -- TODO: optimize this?
         map:_resetCaches()
@@ -121,7 +122,7 @@ function _module_init()
         local fleets = map:getFleetList()
         local fleetUpdateDist = timeToDist(timestep)
         for n, f in pairs(fleets) do
-            local target = map.items[f.target]
+            local target = map._items[f.target]
             local fDist = dist(f, target)
             -- TODO: add 1 ship radius?
             if fDist - fleetUpdateDist < target.r then

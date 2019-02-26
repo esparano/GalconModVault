@@ -23,12 +23,12 @@ function _module_init()
 
         -- set up memoization of key functions
         instance.caches = {}
-        for _, s in pairs(cachedFunctions) do
-            instance.caches[s] = {}
-            instance[s] = memoize(instance[s], instance.caches[s])
+        for _, funcName in pairs(cachedFunctions) do
+            instance.caches[funcName] = {}
+            instance[funcName] = memoize(instance[funcName], instance.caches[funcName])
         end
 
-        instance.items = items
+        instance._items = items
 
         return instance
     end
@@ -36,8 +36,8 @@ function _module_init()
     function Map:_resetCaches()
         for _, s in pairs(cachedFunctions) do
             local t = self.caches[s]
-            for k in pairs(t) do
-                t[k] = nil
+            for arg in pairs(t) do
+                t[arg] = nil
             end
         end
     end
@@ -53,14 +53,14 @@ function _module_init()
     end
 
     function Map:update(items)
-        self.items = items
+        self._items = items
         self:_resetCaches()
     end
 
     -- TODO: refactor searching for planets/users/etc.
     function Map:getPlanetList(ownerId)
         return searchItems(
-            self.items,
+            self._items,
             function(item)
                 return item.is_planet and (ownerId == nil or ownerId == item.owner)
             end
@@ -69,7 +69,7 @@ function _module_init()
 
     function Map:getFleetList(ownerId)
         return searchItems(
-            self.items,
+            self._items,
             function(item)
                 return item.is_fleet and (ownerId == nil or ownerId == item.owner)
             end
@@ -79,7 +79,7 @@ function _module_init()
     -- TODO: test
     function Map:getPlanetAndFleetList(ownerId)
         return searchItems(
-            self.items,
+            self._items,
             function(item)
                 return (item.is_planet or item.is_fleet) and (ownerId == nil or ownerId == item.owner)
             end
@@ -91,7 +91,7 @@ function _module_init()
             includeNeutral = true
         end
         return searchItems(
-            self.items,
+            self._items,
             function(item)
                 return item.is_user and (includeNeutral or not item.neutral)
             end
