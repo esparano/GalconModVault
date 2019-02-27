@@ -1,5 +1,17 @@
 require("mod_memoize")
 
+-- TODO: make this part of a library
+local function deepcopy(o)
+    if type(o) ~= "table" then
+        return o
+    end
+    local r = {}
+    for k, v in pairs(o) do
+        r[k] = deepcopy(v)
+    end
+    return r
+end
+
 -- TODO: documentation
 -- Precalculates things for speeding up future calculations
 -- Provides API for quickly and efficiently accessing aspects about the map
@@ -14,6 +26,12 @@ function _module_init()
         "totalProd",
         "totalShips"
     }
+
+    -- return a clone of this map
+    function Map.copy(map)
+        local itemsClone = deepcopy(map._items)
+        return Map.new(itemsClone)
+    end
 
     function Map.new(items)
         local instance = {}
@@ -122,7 +140,7 @@ function _module_init()
     end
 
     function Map:totalShips(ownerId)
-        return sumProperty(self:getPlanetList(ownerId), "ships")
+        return sumProperty(self:getPlanetAndFleetList(ownerId), "ships")
     end
 
     return Map

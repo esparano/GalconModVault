@@ -1,23 +1,10 @@
 require("mod_galconstate")
-require("mod_galconplayer_classicbot")
+require("mod_galconplayer")
 require("mod_mcts")
 require("mod_map_wrapper")
 
--- TODO: make this part of a bot
-local function deepcopy(o)
-    if type(o) ~= "table" then
-        return o
-    end
-    local r = {}
-    for k, v in pairs(o) do
-        r[k] = deepcopy(v)
-    end
-    return r
-end
-
 local function cloneState(state)
-    local itemsClone = deepcopy(state._map._items)
-    return GalconState.new(Map.new(itemsClone), state._currentAgent, state._previousAgent)
+    return GalconState.new(Map.copy(state._map), state._currentAgent, state._previousAgent)
 end
 
 local function getOtherPlayerN(map, userN)
@@ -51,12 +38,13 @@ function bot_galconzero(params, sb_stats)
     mcts:startUtcSearch(startState)
 
     local ticks, alloc = sb_stats()
-    while ticks < 10000 and alloc < 10000 do
+    --while ticks < 200 and alloc < 200 do
+    for i=1,1 do  
         --[[
         print("starting iteration!!! ticks: " ..
                 ticks .. ", alloc: " .. alloc .. ", reward: " .. mcts._rootNode:getDomainTheoreticValue())
         --]]
-        mcts:nextIteration(0.1)
+        --mcts:nextIteration(0.1)
         ticks, alloc = sb_stats()
     end
 
