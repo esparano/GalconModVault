@@ -66,6 +66,14 @@ function test_not_equals_fail()
     assert.not_equals(4, 4, "some message")
 end
 
+function test_equals_epsilon_default()
+    assert.equals_epsilon(1, 1.0000010)
+end
+
+function test_equals_epsilon_default_fail()
+    assert.equals_epsilon(1, 1.0000011)
+end
+
 function test_equals_epsilon()
     assert.equals_epsilon(1.1, 1.2, 0.21)
     assert.equals_epsilon(1.1, 1.2, 0.1)

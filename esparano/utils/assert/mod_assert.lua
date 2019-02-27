@@ -2,6 +2,8 @@
 function _assert_init()
     local assert = {}
 
+    local DEFAULT_EPSILON = 0.000001
+
     local function _equals_shallow(expected, actual, message, sign)
         if (expected ~= actual) == sign then
             local expected = tostring(expected)
@@ -41,6 +43,9 @@ function _assert_init()
 
     -- TODO: assert.equals_array/table/deep-equals
     function assert.equals_epsilon(expected, actual, epsilon, message)
+        if epsilon == nil then
+            epsilon = DEFAULT_EPSILON
+        end
         if
             not checkType(expected, "number", "expected") or not checkType(actual, "number", "actual") or
                 not checkType(epsilon, "number", "epsilon")
@@ -49,7 +54,7 @@ function _assert_init()
         end
         assert.is_true(
             math.abs(expected - actual) <= epsilon,
-            expected .. " was not within " .. epsilon .. " of " .. actual .. "; " .. (message ~= nil and message or "")
+            actual .. " was not within " .. epsilon .. " of " .. expected .. "; " .. (message ~= nil and message or "")
         )
     end
 

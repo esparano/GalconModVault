@@ -51,8 +51,8 @@ function test_send_vertical()
     local fleet = fleets[1]
     assert.equals(75, fleet.ships)
     assert.equals(target.n, fleet.target)
-    assert.equals_epsilon(home.x, fleet.x, 0.000001)
-    assert.equals_epsilon(home.y + home.r, fleet.y, 0.000001)
+    assert.equals_epsilon(home.x, fleet.x)
+    assert.equals_epsilon(home.y + home.r, fleet.y)
 end
 
 function test_send_horizontal()
@@ -63,7 +63,7 @@ function test_send_horizontal()
     MapSim.send(map, home, target, 100)
 
     local fleet = map:getFleetList()[1]
-    assert.equals_epsilon(home.x + home.r, fleet.x, 0.000001)
+    assert.equals_epsilon(home.x + home.r, fleet.x)
     assert.equals(home.y, fleet.y)
 end
 
@@ -73,15 +73,15 @@ function test_redirect()
 
     MapSim.send(map, home, target, 50)
     local fleet = map:getFleetList()[1]
-    assert.equals_epsilon(30, home.ships, 0.00001)
-    assert.equals_epsilon(30, fleet.ships, 0.00001)
+    assert.equals_epsilon(30, home.ships)
+    assert.equals_epsilon(30, fleet.ships)
 
     MapSim.redirect(map, fleet, home)
     assert.equals(home.n, fleet.target)
 
     MapSim.land(map, fleet)
 
-    assert.equals_epsilon(60, home.ships, 0.000001)
+    assert.equals_epsilon(60, home.ships)
     assert.equals(0, #map:getFleetList())
 end
 
@@ -94,7 +94,7 @@ function test_land_capture()
     local fleet = map:getFleetList()[1]
     MapSim.land(map, fleet)
 
-    assert.equals_epsilon(20, target.ships, 0.000001)
+    assert.equals_epsilon(20, target.ships)
     assert.equals(map:getNeutralUser().n, target.owner)
     assert.is_true(target.neutral)
 
@@ -102,7 +102,7 @@ function test_land_capture()
     fleet = map:getFleetList()[1]
     MapSim.land(map, fleet)
 
-    assert.equals_epsilon(10, target.ships, 0.000001)
+    assert.equals_epsilon(10, target.ships)
     assert.equals(home.owner, target.owner)
     assert.is_false(target.neutral)
 end
@@ -121,14 +121,14 @@ function test_simulate_fleet_flying_and_landing()
 
     local fleet = map:getFleetList()[1]
     assert.equals(home.y, fleet.y)
-    assert.equals_epsilon(5, fleet.x, 0.000001)
+    assert.equals_epsilon(5, fleet.x)
 
     -- default quarter second step
     MapSim.simulate(map)
-    assert.equals_epsilon(15, fleet.x, 0.000001)
+    assert.equals_epsilon(15, fleet.x)
 
     MapSim.simulate(map, 0.5)
-    assert.equals_epsilon(35, fleet.x, 0.000001)
+    assert.equals_epsilon(35, fleet.x)
 
     MapSim.simulate(map, 1.499)
     assert.equals(1, #map:getFleetList(), "should not have crashed yet")
@@ -148,7 +148,7 @@ function test_simulate_production()
 
     MapSim.simulate(map, 0.543)
 
-    assert.equals_epsilon(10.543, home.ships, 0.00001)
+    assert.equals_epsilon(10.543, home.ships)
     assert.equals(50, someNeutral.ships)
 end
 

@@ -33,7 +33,7 @@ function test_prodFraction()
     local friendlyProdFrac = features.prodFraction(m, friendlyUser, enemyUser)
     local enemyProdFrac = features.prodFraction(m, enemyUser, friendlyUser)
     local totalProdFrac = friendlyProdFrac + enemyProdFrac
-    assert.equals_epsilon(1, totalProdFrac, 0.000001)
+    assert.equals_epsilon(1, totalProdFrac)
 end
 
 function test_shipsFraction()
@@ -42,7 +42,7 @@ function test_shipsFraction()
     local friendlyShipsFrac = features.shipsFraction(m, friendlyUser, enemyUser)
     local enemyShipsFrac = features.shipsFraction(m, enemyUser, friendlyUser)
     local totalShipsFrac = friendlyShipsFrac + enemyShipsFrac
-    assert.equals_epsilon(1, totalShipsFrac, 0.000001)
+    assert.equals_epsilon(1, totalShipsFrac)
 end
 
 function test_prodCenterOfMassDistance()
@@ -51,7 +51,7 @@ function test_prodCenterOfMassDistance()
     local dist = features.prodCenterOfMassDistance(m, friendlyUser, enemyUser)
     -- friendly prodCOM: {3.3333333, 1.6666666}
     -- enemy prodCOM: {3.3333, 11.66666}
-    assert.equals_epsilon(10 / 300, dist, 0.000001)
+    assert.equals_epsilon(10 / 300, dist)
 end
 
 function test_shipsCenterOfMassDistance()
@@ -60,7 +60,7 @@ function test_shipsCenterOfMassDistance()
     local dist = features.shipsCenterOfMassDistance(m, friendlyUser, enemyUser)
     -- friendly shipsCOM: {6.666667, 3.333}
     -- enemy shipsCOM: {3.75, 10}
-    assert.equals_epsilon(7.2767704 / 300, dist, 0.0000001)
+    assert.equals_epsilon(7.2767704 / 300, dist)
 end
 
 require("mod_test_runner")

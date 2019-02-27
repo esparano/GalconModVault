@@ -40,7 +40,7 @@ function test_totalShips_ownerId_memoization()
     for _, u in ipairs(users) do
         total = total + m:totalShips(u.n)
     end
-    assert.equals_epsilon(m:totalShips(), total, 0.0001)
+    assert.equals_epsilon(m:totalShips(), total)
     assert.equals(4, p:getN(m, "getPlanetList"))
 
     for _, u in pairs(users) do
@@ -56,7 +56,7 @@ function test_totalProd_ownerId_memoization()
     for _, u in ipairs(users) do
         total = total + m:totalProd(u.n)
     end
-    assert.equals_epsilon(m:totalProd(), total, 0.0001)
+    assert.equals_epsilon(m:totalProd(), total)
     assert.equals(4, p:getN(m, "getPlanetList"))
 
     for _, u in pairs(users) do
