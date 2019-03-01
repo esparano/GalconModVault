@@ -1,5 +1,5 @@
 require("mod_galconstate")
-require("mod_galconplayer")
+require("mod_galconplayer_classicbot")
 require("mod_mcts")
 require("mod_map_wrapper")
 
@@ -30,7 +30,12 @@ function bot_galconzero(params, sb_stats)
     end
 
     local map = Map.new(G)
+    -- TODO: refactor this?
     local enemyN = getOtherPlayerN(map, USER)
+    if enemyN == nil then
+        print("no enemy detected")
+        return
+    end
     local agent = GalconPlayer.new(USER)
     local enemyAgent = GalconPlayer.new(enemyN)
     local startState = GalconState.new(map, agent, enemyAgent)
@@ -38,19 +43,19 @@ function bot_galconzero(params, sb_stats)
     mcts:startUtcSearch(startState)
 
     local ticks, alloc = sb_stats()
-    --while ticks < 200 and alloc < 200 do
-    for i=1,1 do  
+    while ticks < 10000 and alloc < 10000 do
+        -- for i=1,1 do
         --[[
         print("starting iteration!!! ticks: " ..
                 ticks .. ", alloc: " .. alloc .. ", reward: " .. mcts._rootNode:getDomainTheoreticValue())
         --]]
-        --mcts:nextIteration(0.1)
+        mcts:nextIteration(0.1, sb_stats)
         ticks, alloc = sb_stats()
     end
 
     local iterations = mcts._rootNode._visitCount
     local initEval = agent:getRewardFromState(mcts._rootNode._state)
-    local mctsEval = mcts._rootNode:getDomainTheoreticValue()
+    local mctsEval = -mcts._rootNode:getDomainTheoreticValue()
     print("iterations: " .. iterations .. ", initEval: " .. initEval .. ", mctsEval: " .. mctsEval)
 
     local moveStr = mcts:finish()

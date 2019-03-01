@@ -5,7 +5,7 @@ require("mod_assert")
 function _m_init()
     local GalconPlayer = {}
 
-    local MAX_ACTIONS_TO_GENERATE = 1
+    local MAX_ACTIONS_TO_GENERATE = 10
 
     local cachedFunctions = {
         "getAvailableActions"

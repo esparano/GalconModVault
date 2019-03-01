@@ -66,14 +66,14 @@ function _m_init()
                     find(
                     to_options,
                     function(o)
-                        if o.n ~= from.n then
+                        if o.n ~= from.n and o.owner ~= from.owner then
                             return o.production - o.ships - 0.2 * dist(from, o)
                         end
                     end
                 )
 
                 -- s for send, r for redirect
-                local action = state.generateSendAction(from, to, 100)
+                local action = state.generateSendAction(from, to, 65)
                 availableActions:add(action)
             end
         end

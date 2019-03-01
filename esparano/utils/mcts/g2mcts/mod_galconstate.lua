@@ -56,7 +56,8 @@ function _m_init()
         validateAction(self, action)
         self:_doApplyAction(action)
         -- TODO: don't simulate forward if owner is not the bot - simultaneous turns
-        MapSim.simulate(self._map, 10)
+        -- TODO: go back to default timestep
+        MapSim.simulate(self._map, 1)
         self:_selectNextPlayer()
         return self
     end
@@ -88,7 +89,8 @@ function _m_init()
     end
 
     function GalconState:specificPlayerLost(agent)
-        return self._map:totalProd(agent._n) == 0 and self._map:totalShips(agent._n) == 0
+        -- TODO: why doesn't equals 0 work?
+        return self._map:totalProd(agent._n) < 0.1 and self._map:totalShips(agent._n) < 0.1
     end
 
     function GalconState:isTerminal()
