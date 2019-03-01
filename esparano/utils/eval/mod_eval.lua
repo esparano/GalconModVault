@@ -4,22 +4,13 @@ require("mod_features")
 
 local evalNet
 
-local function getOtherPlayerN(map, userN)
-    for i, p in ipairs(map:getPlanetList()) do
-        if not p.neutral and p.owner ~= userN then
-            return p.owner
-        end
-    end
-end
-
 function eval_predict_with_map(m, user)
-    local enemyN = getOtherPlayerN(m, user.n)
-    local f = features.getAll(m, user, m._items[enemyN])
-    for _, val in ipairs(f) do
+    local f = features.getAll(m, user)
+    for i, val in ipairs(f) do
         -- if any feature is undefined, return nil
         -- TODO: stop NaNs in the first place
         if val ~= val then
-            error("invalid training data")
+            error("invalid feature num " .. i .. ": " .. val)
             return
         end
     end

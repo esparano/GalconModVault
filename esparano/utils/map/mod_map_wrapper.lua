@@ -24,7 +24,11 @@ function _module_init()
         "getUserList",
         "getNeutralUser",
         "totalProd",
-        "totalShips"
+        "totalShips",
+        "totalEnemyProd",
+        "totalEnemyShips",
+        "getEnemyPlanetList",
+        "getEnemyPlanetAndFleetList"
     }
 
     -- return a clone of this map
@@ -125,6 +129,26 @@ function _module_init()
         end
     end
 
+    -- TODO: REFACTOR THIS
+    function Map:getEnemyPlanetList(userId)
+        return searchItems(
+            self._items,
+            function(item)
+                return item.is_planet and item.owner ~= userId and not item.neutral
+            end
+        )
+    end
+
+    -- TODO: REFACTOR THIS
+    function Map:getEnemyPlanetAndFleetList(userId)
+        return searchItems(
+            self._items,
+            function(item)
+                return (item.is_planet or item.is_fleet) and item.owner ~= userId and not item.neutral
+            end
+        )
+    end
+
     -- TODO: functional programming library?
     local function sumProperty(l, p)
         local sum = 0
@@ -141,6 +165,14 @@ function _module_init()
 
     function Map:totalShips(ownerId)
         return sumProperty(self:getPlanetAndFleetList(ownerId), "ships")
+    end
+
+    function Map:totalEnemyProd(ownerId)
+        return sumProperty(self:getEnemyPlanetList(ownerId), "production")
+    end
+
+    function Map:totalEnemyShips(ownerId)
+        return sumProperty(self:getEnemyPlanetAndFleetList(ownerId), "ships")
     end
 
     return Map

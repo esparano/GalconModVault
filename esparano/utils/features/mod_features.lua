@@ -7,23 +7,31 @@ function _features_init()
     local PROD_COM_DIST_NORMALIZATION_FACTOR = 300
     local SHIPS_COM_DIST_NORMALIZATION_FACTOR = 300
 
-    function features.totalShips(map, user)
+    function features.totalFriendlyShips(map, user)
         return map:totalShips(user.n) / TOTAL_SHIPS_NORMALIZATION_FACTOR
     end
 
-    function features.totalProd(map, user)
+    function features.totalFriendlyProd(map, user)
         return map:totalProd(user.n) / TOTAL_PROD_NORMALIZATION_FACTOR
     end
 
-    function features.prodFraction(map, user, enemy)
+    function features.totalEnemyShips(map, user)
+        return map:totalEnemyShips(user.n) / TOTAL_SHIPS_NORMALIZATION_FACTOR
+    end
+
+    function features.totalEnemyProd(map, user)
+        return map:totalEnemyProd(user.n) / TOTAL_PROD_NORMALIZATION_FACTOR
+    end
+
+    function features.prodFraction(map, user)
         local userProd = map:totalProd(user.n)
-        local enemyProd = map:totalProd(enemy.n)
+        local enemyProd = map:totalEnemyProd(user.n)
         return userProd / (userProd + enemyProd)
     end
 
-    function features.shipsFraction(map, user, enemy)
+    function features.shipsFraction(map, user)
         local userShips = map:totalShips(user.n)
-        local enemyShips = map:totalShips(enemy.n)
+        local enemyShips = map:totalEnemyShips(user.n)
         return userShips / (userShips + enemyShips)
     end
 
@@ -47,16 +55,22 @@ function _features_init()
         return math.sqrt(xDiff * xDiff + yDiff * yDiff)
     end
 
-    function features.prodCenterOfMassDistance(map, user, enemy)
+    function features.prodCenterOfMassDistance(map, user)
         local userCOM = centerOfMass(map:getPlanetList(user.n), "production")
-        local enemyCOM = centerOfMass(map:getPlanetList(enemy.n), "production")
+        local enemyCOM = centerOfMass(map:getEnemyPlanetList(user.n), "production")
+        if not userCOM or not enemyCOM then
+            return 0
+        end
         return cOMDistance(userCOM, enemyCOM) / PROD_COM_DIST_NORMALIZATION_FACTOR
     end
 
     -- includes fleets
     function features.shipsCenterOfMassDistance(map, user, enemy)
         local userCOM = centerOfMass(map:getPlanetAndFleetList(user.n), "ships")
-        local enemyCOM = centerOfMass(map:getPlanetAndFleetList(enemy.n), "ships")
+        local enemyCOM = centerOfMass(map:getEnemyPlanetAndFleetList(user.n), "ships")
+        if not userCOM or not enemyCOM then
+            return 0
+        end
         return cOMDistance(userCOM, enemyCOM) / SHIPS_COM_DIST_NORMALIZATION_FACTOR
     end
 
@@ -72,16 +86,24 @@ function _features_init()
         return producedNonNeutral(to, S.horizon - timeDist) - to.ships -- cost to capture plus ship production before S.horizon
     end
 
-    function features.getAll(map, user, enemy)
+    local function printFeatures(f)
+        print("FEATURES:")
+        for k, v in pairs(f) do
+            print(v)
+        end
+    end
+
+    function features.getAll(map, user)
         local f = {}
-        table.insert(f, features.totalShips(map, user))
-        table.insert(f, features.totalProd(map, user))
-        table.insert(f, features.totalShips(map, enemy))
-        table.insert(f, features.totalProd(map, enemy))
-        table.insert(f, features.prodFraction(map, user, enemy))
-        table.insert(f, features.shipsFraction(map, user, enemy))
-        table.insert(f, features.prodCenterOfMassDistance(map, user, enemy))
-        table.insert(f, features.shipsCenterOfMassDistance(map, user, enemy))
+        table.insert(f, features.totalFriendlyShips(map, user))
+        table.insert(f, features.totalFriendlyProd(map, user))
+        table.insert(f, features.totalEnemyShips(map, user))
+        table.insert(f, features.totalEnemyProd(map, user))
+        table.insert(f, features.prodFraction(map, user))
+        table.insert(f, features.shipsFraction(map, user))
+        table.insert(f, features.prodCenterOfMassDistance(map, user))
+        table.insert(f, features.shipsCenterOfMassDistance(map, user))
+        --printFeatures(f)
         return f
     end
 
