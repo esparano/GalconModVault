@@ -99,9 +99,15 @@ function _m_init()
     end
 
     function Mcts:nextIteration(explorationParameter, sb_stats)
+        local ticks = sb_stats()
+        print("start")
         local selectedChildNode = treePolicy(self._rootNode, explorationParameter)
+        ticks = sb_stats()
+        print(ticks)
         local terminalState = getTerminalStateFromDefaultPolicy(selectedChildNode, selectedChildNode:getCurrentAgent())
         backPropagate(selectedChildNode, terminalState)
+        ticks = sb_stats()
+        print(ticks)
     end
 
     -- TODO: allow picking move stochastically
