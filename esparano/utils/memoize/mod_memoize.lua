@@ -45,7 +45,7 @@ end
 memoize = _memoize_init()
 _memoize_init = nil
 
-_LICENSE =
+local _LICENSE =
     [[
     MIT LICENSE
     Copyright (c) 2018 Enrique García Cota

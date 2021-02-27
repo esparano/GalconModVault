@@ -1,2 +1,5 @@
 
 .vscode/settings.json
+*.code-workspace
+esparano/utils/.pytest_cache/
+esparano/utils/.vscode/
