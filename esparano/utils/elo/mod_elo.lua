@@ -40,6 +40,7 @@ function _elo_init()
     end
 
     function elo.update_elo(user1, user2, first_won)
+        if user1 == user2 then return end 
         local r1 = elo.get_elo(user1)
         local r2 = elo.get_elo(user2)
         r1, r2 = elo._calculate_new_elos(r1, r2, first_won)
