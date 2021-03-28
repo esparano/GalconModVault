@@ -126,4 +126,9 @@ function test_not_nil_fail()
     assert.not_nil(nil, "some message")
 end
 
+function test_fail()
+    assert.fail()
+    assert.fail("some message")
+end
+
 require("mod_test_runner")

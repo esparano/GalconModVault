@@ -4,6 +4,8 @@ function _assert_init()
 
     local DEFAULT_EPSILON = 0.000001
 
+    -- TODO: deep equals
+
     local function _equals_shallow(expected, actual, message, sign)
         if (expected ~= actual) == sign then
             local expected = tostring(expected)
@@ -72,6 +74,14 @@ function _assert_init()
 
     function assert.not_nil(obj, message)
         assert.not_equals(nil, obj, message)
+    end
+
+    function assert.fail(message)
+        local error_message = "assert: failure"
+        if message ~= nil then
+            error_message = error_message .. ", message: " .. tostring(message)
+        end
+        print(error_message)
     end
 
     return assert
