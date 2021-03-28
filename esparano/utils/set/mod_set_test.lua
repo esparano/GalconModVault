@@ -7,12 +7,14 @@ function test_available_functions()
     end
     assert.not_nil(Set)
     assert.not_nil(Set.add)
+    assert.not_nil(Set.addAll)
     assert.not_nil(Set.remove)
     assert.not_nil(Set.contains)
 end
 
 function test_local_functions()
     assert.is_nil(add)
+    assert.is_nil(addAll)
     assert.is_nil(remove)
     assert.is_nil(contains)
 end

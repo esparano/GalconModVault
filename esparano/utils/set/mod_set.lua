@@ -10,12 +10,16 @@ function Set.new(list)
     instance._values = {}
     instance._size = 0
     if list then
-        for _, l in ipairs(list) do instance:add(l) end
+        instance:addAll(list)
     end
     return instance
 end
 
--- TODO: THIS ENTIRE CLASS ONLY WORKS FOR PRIMITIVES
+function Set:addAll(list)
+    for _, l in ipairs(list) do self:add(l) end
+end
+
+-- TODO: THIS ENTIRE CLASS ONLY WORKS FOR PRIMITIVES??
 function Set:add(e)
     if not self._values[e] then
         self._size = self._size + 1
