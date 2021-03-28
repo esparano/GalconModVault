@@ -39,6 +39,10 @@ function _common_utils_init()
         return math.floor(num + 0.5)
     end
 
+    function common_utils.toPrecision(num, precision)
+        return common_utils.round(10^precision * num)/10^precision
+    end
+
     function common_utils.clamp(val, min, max)
         min = min or 0
         max = max or 1
@@ -70,13 +74,30 @@ function _common_utils_init()
         return r
     end
 
+    function common_utils.findAll(items, predicate)
+        local matches = {}
+        for _, item in pairs(items) do
+            if predicate(item) then
+                matches[#matches + 1] = item
+            end
+        end
+        return matches
+    end
+
+    -- TODO: should this work with pairs?
     function common_utils.map(list, f)
         local result = {}
         for i,v in ipairs(list) do
             result[i] = f(v)
         end
         return result
-      end
+    end
+
+    function common_utils.forEach(list, f)
+        for _,v in ipairs(list) do
+            f(v)
+        end
+    end
 
     function common_utils.reduce(list, f) 
         local acc
@@ -94,8 +115,12 @@ function _common_utils_init()
         return common_utils.reduce(list, function (a, b) return a + b end)
     end
 
-    return common_utils
+    function common_utils.joinToString(list, delimiter)
+        delimiter = delimiter or ', '
+        return common_utils.reduce(common_utils.map(list, tostring), function (a, b) return a .. delimiter .. b end) or ""
+    end
 
+    return common_utils
 
 end
 common_utils = _common_utils_init()

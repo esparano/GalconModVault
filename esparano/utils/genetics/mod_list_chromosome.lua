@@ -11,9 +11,8 @@ function _m_init()
             instance[k] = v
         end
 
-        -- TODO: add to common utils for precision
         for k, v in pairs(representation) do
-            representation[k] = common_utils.round(1000*v)/1000
+            representation[k] = common_utils.toPrecision(v, 3)
         end
         instance.representation = representation
         instance.fitness = fitness
