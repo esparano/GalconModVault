@@ -1,3 +1,13 @@
+require("mod_common_utils")
+
+--[[
+    Example usage: 
+    -- local p = profiler.new()
+    -- p:profile(someObject)
+    -- someObject:doSomeExpensiveStuff()
+    -- p:printData(someObject, "objectName")
+]]
+
 -- TODO: documentation
 function _profiler_init()
     local profiler = {}
@@ -79,7 +89,7 @@ function _profiler_init()
                         "." ..
                             funcName ..
                                 ":  n: " ..
-                                    t.n .. ", t: " .. round(t.elapsed, 5) .. ", t/n: " .. round(t.elapsed / t.n, 5)
+                                    t.n .. ", t: " .. common_utils.round(t.elapsed, 5) .. ", t/n: " .. common_utils.round(t.elapsed / t.n, 5)
                 )
             end
         end
