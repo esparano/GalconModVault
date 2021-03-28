@@ -1,6 +1,6 @@
 require("mod_assert")
 require("mod_features")
-require("mod_map_wrapper")
+require("mod_map_info")
 require("mod_map_builder")
 require("mod_testmapgen")
 

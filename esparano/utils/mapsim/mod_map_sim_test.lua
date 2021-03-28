@@ -1,6 +1,6 @@
 require("mod_assert")
 require("mod_testmapgen")
-require("mod_map_wrapper")
+require("mod_map_info")
 require("mod_map_sim")
 
 local function printPlanet(p, name)

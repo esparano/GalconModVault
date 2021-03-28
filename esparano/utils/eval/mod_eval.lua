@@ -1,5 +1,5 @@
 require("mod_neural_net")
-require("mod_map_wrapper")
+require("mod_map_info")
 require("mod_features")
 
 local evalNet

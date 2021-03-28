@@ -1,7 +1,7 @@
 require("mod_galconstate")
 require("mod_galconplayer_classicbot")
 require("mod_mcts")
-require("mod_map_wrapper")
+require("mod_map_info")
 
 local function cloneState(state)
     return GalconState.new(Map.copy(state._map), state._currentAgent, state._previousAgent)

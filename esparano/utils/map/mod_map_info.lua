@@ -1,16 +1,5 @@
 require("mod_memoize")
-
--- TODO: make this part of a library
-local function deepcopy(o)
-    if type(o) ~= "table" then
-        return o
-    end
-    local r = {}
-    for k, v in pairs(o) do
-        r[k] = deepcopy(v)
-    end
-    return r
-end
+require("mod_common_utils")
 
 -- TODO: documentation
 -- Precalculates things for speeding up future calculations
@@ -31,9 +20,14 @@ function _module_init()
         "getEnemyPlanetAndFleetList"
     }
 
+    local function toUserId(user)
+        if type(user) == "number" then return user end
+        return user.n
+    end
+
     -- return a clone of this map
     function Map.copy(map)
-        local itemsClone = deepcopy(map._items)
+        local itemsClone = common_utils.copy(map._items)
         return Map.new(itemsClone)
     end
 
@@ -64,16 +58,6 @@ function _module_init()
         end
     end
 
-    local function searchItems(items, f)
-        local matches = {}
-        for _, item in pairs(items) do
-            if f(item) then
-                matches[#matches + 1] = item
-            end
-        end
-        return matches
-    end
-
     function Map:update(items)
         self._items = items
         self:_resetCaches()
@@ -81,7 +65,8 @@ function _module_init()
 
     -- TODO: refactor searching for planets/users/etc.
     function Map:getPlanetList(ownerId)
-        return searchItems(
+        if ownerId then ownerId = toUserId(ownerId) end
+        return common_utils.findAll(
             self._items,
             function(item)
                 return item.is_planet and (ownerId == nil or ownerId == item.owner)
@@ -90,7 +75,8 @@ function _module_init()
     end
 
     function Map:getFleetList(ownerId)
-        return searchItems(
+        if ownerId then ownerId = toUserId(ownerId) end
+        return common_utils.findAll(
             self._items,
             function(item)
                 return item.is_fleet and (ownerId == nil or ownerId == item.owner)
@@ -100,7 +86,8 @@ function _module_init()
 
     -- TODO: test
     function Map:getPlanetAndFleetList(ownerId)
-        return searchItems(
+        if ownerId then ownerId = toUserId(ownerId) end
+        return common_utils.findAll(
             self._items,
             function(item)
                 return (item.is_planet or item.is_fleet) and (ownerId == nil or ownerId == item.owner)
@@ -112,12 +99,22 @@ function _module_init()
         if includeNeutral == nil then
             includeNeutral = true
         end
-        return searchItems(
+        return common_utils.findAll(
             self._items,
             function(item)
                 return item.is_user and (includeNeutral or not item.neutral)
             end
         )
+    end
+
+    function Map:getEnemyUser(userId)
+        if userId then userId = toUserId(userId) end
+        local users = self:getUserList(false)
+        for _, u in ipairs(users) do
+            if u.n ~= userId then
+                return u
+            end
+        end
     end
 
     function Map:getNeutralUser()
@@ -129,33 +126,21 @@ function _module_init()
         end
     end
 
-    -- TODO: REFACTOR THIS
+    function Map:getNeutralPlanetList()
+        return self:getPlanetList(self:getNeutralUser())
+    end
+
     function Map:getEnemyPlanetList(userId)
-        return searchItems(
-            self._items,
-            function(item)
-                return item.is_planet and item.owner ~= userId and not item.neutral
-            end
-        )
+        return self:getPlanetList(self:getEnemyUser(userId))
     end
 
-    -- TODO: REFACTOR THIS
     function Map:getEnemyPlanetAndFleetList(userId)
-        return searchItems(
-            self._items,
-            function(item)
-                return (item.is_planet or item.is_fleet) and item.owner ~= userId and not item.neutral
-            end
-        )
+        return self:getPlanetAndFleetList(self:getEnemyUser(userId))
     end
 
-    -- TODO: functional programming library?
     local function sumProperty(l, p)
-        local sum = 0
-        for _, v in ipairs(l) do
-            sum = sum + v[p]
-        end
-        return sum
+        local vs = common_utils.map(l, function (o) return o[p] end)
+        return common_utils.sumList(vs)
     end
 
     -- playerId is optional

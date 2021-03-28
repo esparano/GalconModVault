@@ -1,6 +1,6 @@
 require("mod_assert")
 require("mod_testmapgen")
-require("mod_map_wrapper")
+require("mod_map_info")
 require("mod_profiler")
 
 local m
@@ -19,10 +19,10 @@ end
 function test_totalShips_memoization()
     m:totalShips()
     m:totalShips()
-    assert.equals(1, p:getN(m, "getPlanetList"))
+    assert.equals(1, p:getN(m, "getPlanetAndFleetList"))
     m:_resetCaches()
     m:totalShips()
-    assert.equals(2, p:getN(m, "getPlanetList"))
+    assert.equals(2, p:getN(m, "getPlanetAndFleetList"))
 end
 
 function test_totalProd_memoization()
@@ -41,13 +41,13 @@ function test_totalShips_ownerId_memoization()
         total = total + m:totalShips(u.n)
     end
     assert.equals_epsilon(m:totalShips(), total)
-    assert.equals(4, p:getN(m, "getPlanetList"))
+    assert.equals(4, p:getN(m, "getPlanetAndFleetList"))
 
     for _, u in pairs(users) do
         total = total + m:totalShips(u.n)
     end
     m:totalShips()
-    assert.equals(4, p:getN(m, "getPlanetList"))
+    assert.equals(4, p:getN(m, "getPlanetAndFleetList"))
 end
 
 function test_totalProd_ownerId_memoization()
