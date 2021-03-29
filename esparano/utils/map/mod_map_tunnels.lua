@@ -1,8 +1,6 @@
 require("mod_common_utils")
 require("mod_game_utils")
 
--- game_utils.realDistance = memoize(game_utils.realDistance)
-
 function _module_init()
     local MapTunnels = {}
 
@@ -20,7 +18,7 @@ function _module_init()
         return planetInfo
     end
 
-    local function initTunnelInfo(items, planetInfo)
+    local function initTunnelInfo(planetInfo)
         local tunnelInfo = {}
         for sourceId,_ in pairs(planetInfo) do
             tunnelInfo[sourceId] = {}
@@ -33,10 +31,62 @@ function _module_init()
         return tunnelInfo
     end
 
+    -- TODO: could modify to take into account bot movement speed, by adding something like ceil(dist_to_time(realDistance(source,target)) / actionRate) * actionRate
+    local estimatedRealDistance = game_utils.realDistance
+
+    -- the better tunneling through a planet WOULD have been compared to going around it,
+    -- the more (to the second power, as an estimate) congestion the planet adds to paths going around it
+    -- TODO: this is imperfect and could use some curve fitting and/or a slightly different approach to estimating congestion. This does a poor job at 
+    -- estimating the compounding effects of multiple nearby planets, although it suffices for single congesting planets.
+    local function tunnelingDiffToCongestionCorrection(c)
+        return c * c / 120
+    end
+
+    -- return an effective distance
+    local function computeCongestionCorrection(sourceId, targetId, items, planetInfo, numShipsSent, costOverride)
+        numShipsSent = numShipsSent or DEFAULT_TUNNEL_SHIPS_SENT
+        costOverride = costOverride or 0
+
+        local source = items[sourceId]
+        local target = items[targetId]
+
+        local totalCorrection = 0
+        for proxyId,_ in pairs(planetInfo) do
+            if proxyId ~= sourceId and proxyId ~= targetId then
+                local proxy = items[proxyId]
+                local tunnelDist = estimatedRealDistance(source, proxy, numShipsSent, costOverride) + estimatedRealDistance(proxy, target, numShipsSent, costOverride)
+                local diffFromTunneling = estimatedRealDistance(source, target, numShipsSent, costOverride) - tunnelDist
+                local correction = tunnelingDiffToCongestionCorrection(math.max(0, diffFromTunneling))
+                totalCorrection = totalCorrection + correction
+            end
+        end
+        return totalCorrection
+    end
+
+    local function initCongestionCorrections(items, planetInfo)
+        local corrections = {}
+        -- necessary to first initialize to avoid nil errors
+        for sourceId,_ in pairs(planetInfo) do
+            corrections[sourceId] = {}
+        end
+        for sourceId,_ in pairs(planetInfo) do
+            for targetId,_ in pairs(planetInfo) do
+                if sourceId == targetId then
+                    corrections[sourceId][targetId] = 0
+                else 
+                    corrections[sourceId][targetId] = corrections[sourceId][targetId] or computeCongestionCorrection(sourceId, targetId, items, planetInfo)
+                end
+                corrections[targetId][sourceId] = corrections[sourceId][targetId]
+            end
+        end
+        return corrections
+    end
+
     function MapTunnels.new(items, data)
         data = data or {}
         data.planetInfo = data.planetInfo or initPlanetInfo(items)
-        data.tunnelInfo = data.tunnelInfo or initTunnelInfo(items, data.planetInfo)
+        data.tunnelInfo = data.tunnelInfo or initTunnelInfo(data.planetInfo)
+        data.congestionCorrections = data.congestionCorrections or initCongestionCorrections(items, data.planetInfo)
 
         local instance = {}
         for k, v in pairs(MapTunnels) do
@@ -60,7 +110,6 @@ function _module_init()
         end
     end
 
-    -- TODO: add tunnelTime, which could predict time to arrival, summing ceil(dist_to_time(realDistance(source,target)) / actionRate) * actionRate
     function MapTunnels:setTunnelable(source)
         if self.data.planetInfo[source.n].tunnelable then
             return
@@ -70,18 +119,22 @@ function _module_init()
         self:updateTunnels(source)
     end
 
+    -- TODO: this precalculated congestionCorrectedDistance makes assumptions that IGNORE the passed in numShipsSent/costOverride
+    function MapTunnels:getCongestionCorrectedDistance(sourceId, targetId, numShipsSent, costOverride)
+        local source = self.items[sourceId]
+        local target = self.items[targetId]
+        local congestionCorrection = self.data.congestionCorrections[sourceId][targetId]
+        return estimatedRealDistance(source, target, numShipsSent, costOverride) + congestionCorrection
+    end
+
     function MapTunnels:getTunnelDist(sourceId, targetId, numShipsSent, costOverride)
         numShipsSent = numShipsSent or DEFAULT_TUNNEL_SHIPS_SENT
 
         local sum = 0
         while sourceId ~= targetId do
-            local source = self.items[sourceId]
             local aliasId = self.data.tunnelInfo[sourceId][targetId].aliasId
-            local alias = self.items[aliasId]
 
-            -- TODO: use "intervening planets" correction to account for ships getting stuck on planets...
-            local estDist = game_utils.realDistance(source, alias, numShipsSent, costOverride)
-            sum = sum + estDist
+            sum = sum + self:getCongestionCorrectedDistance(sourceId, aliasId, numShipsSent, costOverride)
 
             sourceId = aliasId
         end
@@ -97,9 +150,9 @@ function _module_init()
     end
 
     function MapTunnels:invalidateTunnelDists()
-        for sourceId,s in pairs(self.data.tunnelInfo) do
-            for targetId,tunnelInfo in pairs(s) do
-                self.data.tunnelInfo[sourceId][targetId].tunnelDist = nil
+        for _,s in pairs(self.data.tunnelInfo) do
+            for _,tunnelInfo in pairs(s) do
+                tunnelInfo.tunnelDist = nil
             end
         end
     end
@@ -115,8 +168,8 @@ function _module_init()
 
             for sourceId,s in pairs(self.data.tunnelInfo) do
                 if aliasCandidate.n ~= sourceId then 
-                    local source = self.items[sourceId]
-                    local sourceToCandidateDist = game_utils.realDistance(source, aliasCandidate, DEFAULT_TUNNEL_SHIPS_SENT, 0)
+                    -- is going DIRECTLY to candidate better (NOT tunneling to candidate first)?
+                    local sourceToCandidateDist = self:getCongestionCorrectedDistance(sourceId, aliasCandidate.n, DEFAULT_TUNNEL_SHIPS_SENT, 0)
                     for targetId,tunnelInfo in pairs(s) do
                         if aliasCandidate.n ~= targetId then 
 
@@ -124,6 +177,7 @@ function _module_init()
                             local candidateToTargetTunnelDist = self:getSimplifiedTunnelDist(aliasCandidate.n, targetId)
 
                             -- if "candidateAlias" is a faster way to get to "alias", then 
+                            -- only update if more than 1 distance unit faster, to avoid floating point errors leading to infinite loops.
                             if common_utils.toPrecision(sourceToCandidateDist + candidateToTargetTunnelDist, 1) < common_utils.toPrecision(currentTunnelDist, 1) then 
                                 tunnelInfo.aliasId = aliasCandidate.n
                                 -- other tunnels may be affected by this, causing a cascade of recalculations to be necessary
