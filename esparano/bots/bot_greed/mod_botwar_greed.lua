@@ -525,7 +525,7 @@ function _bots_run(_data, loop, uid, _options, memory)
         error("[" .. loop .. "]: " .. msg)
         return
     end
-    if memory_estimate(memory) > 65536 then
+    if memory_estimate(memory) > 64000000 then
         error("[" .. loop .. "]: memory limit exceeded")
         return
     end
@@ -616,7 +616,6 @@ function debugDrawPaths(botUser, planetOrFleetPairs, planetOwner)
     local highlightColor = g2.item(planetOwner.n).render_color
     highlightColor = adjustSaturation(highlightColor, -0.5)
     for i, pair in pairs(planetOrFleetPairs) do
-        print("here")
         local o = g2.new_line(highlightColor, pair.source.x, pair.source.y, pair.target.x, pair.target.y)
         table.insert(DEBUG_DRAWINGS[botUser.n], o)
     end
