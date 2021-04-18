@@ -37,7 +37,7 @@ function getPositiveRoiNeutralData(map, mapTunnels, user, neutrals)
     local enemyHome = getHome(map, mapTunnels, map:getEnemyUser(user))
 
     local neutralROIs = {}
-    for _, p in pairs(neutrals) do 
+    for _, p in pairs(neutrals) do
         local distDifference = mapTunnels:getSimplifiedTunnelDist(enemyHome.n, p.n) - mapTunnels:getSimplifiedTunnelDist(home.n, p.n)
         local prodTime = game_utils.distToTravelTime(distDifference)
 
@@ -120,13 +120,138 @@ function getFrontPlanets(map, mapTunnels, user, friendlyPlannedCapturesSet, enem
     )
 end
 
-function testFullFrontalAssault(map, mapTunnels, user)
-    -- for each front planet we own, enemy should take closest planets to each front planet and full-attack. 
-    -- Method 1: fast forward to "horizon", maybe? then sum ship surpluses or deficits across owned front planets. This assumes ships can be redistributed to help with defending fronts. 
+-- TODO: take into account planets that WILL be captured, including neutrals, etc.
+-- TODO: may not necessarily be useful for - or may need to be modified for - cases where we capture an enemy planet while floating.
+-- That becomes a "front" planet, and suddenly the enemy's attack may seem stronger than it really is because that planet has a very high ship deficit, or 
+-- could even seem weaker that it really is because that soon-to-be-captured planet's prod isn't counted in the enemy's attack.
+-- TODO: try assigning friendly planets *based on predicted deficits from enemy attack* and try to optimize which planets defend each front planet
+
+-- Test whether the enemy 100% rushing the nearest friendly "front" planets will result in being overwhelmed.
+-- Can be used for safely expanding or triggering a rush when the enemy over-expands.
+function testFullFrontalAssault_OLD(map, mapTunnels, user, frontPlanets)
+    -- divide friendly and enemy planets into groups according to their closest friendly "front" planet
+    -- Ship surpluses/deficits are summed across owned front planets to make sure that, for example, capturing a planet near the home doesn't cause us to lose mid/sides.
+    -- This assumes ships can be redistributed to help with defending fronts. 
+    
+    -- TODO: temporary, maybe swap for center of prod wait until last ship lands? idk.
+    local horizon = math.max(7, game_utils.distToTravelTime(getHomesDistance(map, mapTunnels)))
+    print("horizon: " .. horizon)
+
+    local friendlyPlanets = map:getPlanetList(user)
+    local enemyPlanets = map:getEnemyPlanetList(user)
+
+    -- local subAssaults = {}
+    -- for i,front in ipairs(frontPlanets) do 
+    --     subAssaults[front] = {
+    --         enemyPlanets = {},
+    --         friendlyPlanets = {}
+    --     }
+    -- end
+    -- first, divide enemyPlanets by closest friendly "front" planet and predict how many ships will arrive by "horizon" seconds
+    -- for i,p in ipairs(enemyPlanets) do
+    --     local front = getClosestTarget(mapTunnels, p, frontPlanets)
+    --     if front then 
+    --         table.insert(subAssaults[front].enemyPlanets, p)
+    --     end
+    -- end
+    -- for front,assault in pairs(subAssaults) do 
+    --     assault.enemyProdContribution = getAssaultProdContributions(mapTunnels, assault.enemyPlanets, front, horizon)
+    --     print("enemy strength on planet " .. front.ships .. ": " .. assault.enemyProdContribution)
+    -- end
+    -- TODO: THIS IS VERY SIMPLISTIC and I would have liked to have a more sophisticated attack simulation where the enemy attacks multiple fronts simultaneously, floats, etc.
+    -- THIS IS AN EXTREMELY ROUGH ESTIMATE.
 end
 
-function testFullAttack(map, mapTunnels, user)
+-- function withstandsAllFrontalRushes(map, mapTunnels, user, frontPlanets)
+--     -- TODO: temporary, maybe swap for center of prod wait until last ship lands? idk.
+--     local horizon = math.max(7, game_utils.distToTravelTime(getHomesDistance(map, mapTunnels)))
+--     print("horizon: " .. horizon)
 
+--     -- TODO: make a copy of map planets because we may modify them?
+--     local friendlyPlanets = map:getPlanetList(user)
+--     local enemyPlanets = map:getEnemyPlanetList(user)
+
+--     -- make sure an all-out rush against ANY potential front planet will not succeed
+--     -- TODO: THIS IS VERY SIMPLISTIC and I would have liked to have a more sophisticated attack simulation where the enemy attacks multiple fronts simultaneously, floats, etc.
+--     -- THIS IS AN EXTREMELY ROUGH ESTIMATE.
+--     for i,front in ipairs(frontPlanets) do 
+--         if simulatedRushSucceeds(map, mapTunnels, front, friendlyPlanets, enemyPlanets) then 
+--             return false 
+--         end
+--     end
+--     return true
+-- end
+
+-- simulate an all-out rush on a planet given the attackers and defenders
+-- defendingPlanets should include "target"
+function simulatedRushSucceeds(map, mapTunnels, defendingTarget, defendingPlanets, attackingPlanets)
+    local allPlanets = {}
+    for i,p in ipairs(defendingPlanets) do 
+        table.insert(allPlanets, {p = p, friendly = true})
+    end
+    for i,p in ipairs(attackingPlanets) do 
+        table.insert(allPlanets, {p = p, friendly = false})
+    end
+    table.sort(allPlanets, function (a, b) 
+        return mapTunnels:getSimplifiedTunnelDist(a.p.n, defendingTarget.n) < mapTunnels:getSimplifiedTunnelDist(b.p.n, defendingTarget.n)
+    end)
+    print(allPlanets[1].p.ships)
+
+    return false
+end
+
+-- returns true if it is obvious that a simple rush will break through at least one front planet by all-out attacking that front planet
+function rushWillBreakThroughAnyFrontPlanet(map, mapTunnels, defendingUser, defendingFrontPlanets, enemyFrontPlanets)
+    -- TODO: temporary, maybe swap for center of prod wait until last ship lands? idk.
+    local horizon = math.max(7, game_utils.distToTravelTime(getHomesDistance(map, mapTunnels)))
+    print("horizon: " .. horizon)
+   
+    -- TODO: make a copy of map planets because we may modify them?
+    local friendlyPlanets = map:getPlanetList(defendingUser)
+    local enemyPlanets = map:getEnemyPlanetList(defendingUser)
+
+    -- TODO: how to deal with "to-be-captured" front planets? How long will it take to capture them, and will the rush succeed, etc?
+   
+    -- make sure an all-out rush against ANY potential front planet will not succeed
+    -- TODO: THIS IS VERY SIMPLISTIC and I would have liked to have a more sophisticated attack simulation where the enemy attacks multiple fronts simultaneously, floats, etc.
+    -- THIS IS AN EXTREMELY ROUGH ESTIMATE.
+    for i,front in ipairs(defendingFrontPlanets) do 
+        if rushWillDefinitelyOverwhelmPlanet(map, mapTunnels, front, friendlyPlanets, enemyPlanets) then 
+            return false 
+        end
+    end
+    return true
+end
+
+function rushWillDefinitelyOverwhelmPlanet(map, mapTunnels, defendingTarget, defendingPlanets, attackingPlanets)
+    local shipDiff = map:totalShips(defendingTarget.owner) - map:totalEnemyShips(defendingTarget.owner)
+    return shipDiff < 0
+end
+
+function getClosestTarget(mapTunnels, source, targets)
+    return common_utils.find(targets, function (target)
+        return -mapTunnels:getSimplifiedTunnelDist(source.n, target.n) 
+    end)
+end
+
+-- return the number of ships after "horizon" seconds that have arrived at the target planet ONLY as a result of production
+-- if overwhelmed, return ship deficit rather than having overwhelmed planet be captured, etc.
+function getAssaultProdContributions(mapTunnels, sources, target, horizon)
+    local totalShipsArrived = 0
+    for i,source in pairs(sources) do
+        totalShipsArrived = totalShipsArrived + getAssaultSinglePlanetProdContribution(mapTunnels, source, target, horizon)
+    end
+    return totalShipsArrived
+end
+
+function getAssaultSinglePlanetProdContribution(mapTunnels, source, target, horizon)
+    local tunnelDist = mapTunnels:getSimplifiedTunnelDist(source.n, target.n)
+    local prodTime = horizon - game_utils.distToTravelTime(tunnelDist)
+    if prodTime < 0 then 
+        print("WARNING: production time was negative for AssaultProdContribution of planet " .. source.ships)
+        prodTime = 0
+    end
+    return game_utils.calcShipsProducedNonNeutral(source, prodTime)
 end
 
 function bot_greed(params, sb_stats)
@@ -175,6 +300,7 @@ function bot_greed(params, sb_stats)
         friendlyPlannedCapturesSet = Set.new(),
         enemyPlannedCapturesSet = Set.new()
     }
+    -- TODO: CapturePlan, contains planned friendly and enemy captures, can be evaluated, maybe? and most importantly contains estimated capture times for all neutrals.
 
     local friendlyPositiveRoiNeutralData, enemyPositiveRoiNeutralData = getNeutralsDataWithPositiveRoi(map, mapTunnels, botUser)
     capturePlan.friendlyPlannedCapturesSet:addAll(common_utils.map(friendlyPositiveRoiNeutralData, function (p) return p.target.n end))
@@ -182,9 +308,15 @@ function bot_greed(params, sb_stats)
 
     -- get expansion plan by taking positiveRoiNeutrals plus good neutrals for which fullFrontalAssault(expansionPlan) test passes, and add to expansion plan.
     -- Take full expansion plan and figure out how many ships to send in each direction... maybe by looking at existing fleet paths and nearby ships, etc... 
-
+    
     local botFrontPlanets = getFrontPlanets(map, mapTunnels, botUser, capturePlan.friendlyPlannedCapturesSet, capturePlan.enemyPlannedCapturesSet)
     local enemyFrontPlanets = getFrontPlanets(map, mapTunnels, enemyUser, capturePlan.enemyPlannedCapturesSet, capturePlan.friendlyPlannedCapturesSet)
+
+    -- TODO: for each neutral, copy mapTunnels, make it tunnelable, then testFullFrontalAssault for it, etc. Make sure it's a deep copy.
+
+    -- TODO: just testing here.. start with only owned planets, etc.
+    local a = rushWillBreakThroughAnyFrontPlanet(map, mapTunnels, enemyUser, enemyFrontPlanets, botFrontPlanets)
+    print("A rush will break through at least one front planet: " .. tostring(a))
 
     -- DEBUG DRAWING
     if OPTS.debug.drawFriendlyFrontPlanets then 
@@ -258,8 +390,3 @@ function debugDrawTunnels(botUser, map, mapTunnels, owner, targets)
     DEBUG.debugDrawPaths(botUser, tunnelPairs, owner)
 end
 
-function getClosestTarget(mapTunnels, source, targets)
-    return common_utils.find(targets, function (target)
-        return -mapTunnels:getSimplifiedTunnelDist(source.n, target.n) 
-    end)
-end
