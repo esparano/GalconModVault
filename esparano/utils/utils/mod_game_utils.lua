@@ -37,6 +37,14 @@ function _game_utils_init()
         return ships * 50
     end
 
+    -- what percent the planet should send at to send at least this number of ships
+    -- increments of 5%, max 100%.
+    function game_utils.percentToUse(planet, ships)
+        if planet.ships == 0 then return 100 end
+        local pct = math.ceil((ships + 1) / planet.ships * 100 / 5) * 5
+        return common_utils.clamp(pct, 5, 100)
+    end
+
     -- if planet "to" is attacked from planet "from" and captured,
     -- how many net ships will it produce before "horizon" seconds?
     -- return negative planet cost if planet farther than "horizon"
