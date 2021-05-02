@@ -83,8 +83,6 @@ end
 function getNeutralsDataWithPositiveRoi(map, mapTunnels, user)
     local enemyUser = map:getEnemyUser(user)
 
-    local notTunnelablePlanets = common_utils.findAll(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p.n) end)
-    local notTunnelablePlanetIdSet = Set.new(notTunnelablePlanets)
     -- make sure positive-roi neutrals are set to tunnelable. Process positive-roi neutrals one at a time, alternating between enemy and friendly user, 
     -- picking the highest-roi for each user first, because either user being able to tunnel through a planet will affect the captures of other planets
     while true do
