@@ -112,13 +112,37 @@ function _common_utils_init()
     end 
 
     function common_utils.sumList(list)
-        return common_utils.reduce(list, function (a, b) return a + b end)
+        return common_utils.reduce(list, function (a, b) return a + b end) or 0
     end
 
     function common_utils.joinToString(list, delimiter)
         delimiter = delimiter or ', '
         return common_utils.reduce(common_utils.map(list, tostring), function (a, b) return a .. delimiter .. b end) or ""
     end
+
+    function common_utils.combineLists(list1, list2)
+        local combined = {}
+        for k, v in ipairs(list1) do
+            table.insert(combined, v)
+        end
+        for k, v in ipairs(list2) do
+            table.insert(combined, v)
+        end
+        return combined
+    end
+
+    -- merges table t2 into t1, *modifying* t1
+    function common_utils.mergeTableInto(t1, t2)
+        for k, v in pairs(t2) do
+            if (type(v) == "table") and (type(t1[k] or false) == "table") then
+                common_utils.mergeTableInto(t1[k], t2[k])
+            else
+                t1[k] = v
+            end
+        end
+        return t1
+    end
+
 
     return common_utils
 
