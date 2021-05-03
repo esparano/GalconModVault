@@ -662,7 +662,7 @@ function event(e)
         reset(false)
     end
     if (e["type"] == "onclick" and e["value"] == "newSeed") then
-        GAME.seed = math.random(0, 1000)
+        GAME.mapSeed = math.random(0, 1000)
         reset(GAME.live)
     end
     if (e["type"] == "onclick" and e["value"] == "resume") then
