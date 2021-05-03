@@ -64,9 +64,22 @@ function _m_init()
     end
 
     function Action:getSummary()
-        return self.mind.name .. " suggests " .. self.actionType .. " with priority "
-            .. common_utils.toPrecision(self.initialPriority, 2) .. " and final priority "
-            .. common_utils.toPrecision(self:getOverallPriority(), 2)
+        local description
+        if self:isSend() then 
+            local sourceShips = common_utils.joinToString(common_utils.map(self.sources, function (f) return common_utils.round(f.ships) end), ",")
+            description = "s [" .. sourceShips .. "] -> " .. self.target.ships
+        elseif self:isRedirect() then 
+            description = "r " .. common_utils.round(common_utils.sumList(common_utils.map(self.sources, function (f) return f.ships end)))
+                .. "s -> " .. self.target.ships
+        elseif self:isPass() then 
+            description = "p"
+        end
+        description = description .. ", details: " .. self.description
+        return self.mind.name 
+            .. "(p0: " .. common_utils.toPrecision(self.initialPriority, 2) 
+            .. ", p: " .. common_utils.toPrecision(self:getOverallPriority(), 2) 
+            .. ") " 
+            .. description
     end
 
     return Action

@@ -19,8 +19,16 @@ function _m_init()
         end
 
         instance.name = "Expand"
+
         instance.roiWeight = params.roiWeight
         instance.shipReturnsWeight = params.roiWeight
+        instance.fullAttackDiffWeight = params.fullAttackDiffWeight
+        instance.fullAttackDiffIntercept = params.fullAttackDiffIntercept
+        instance.fullAttackDiffMin = params.fullAttackDiffMin
+        instance.fullAttackDiffMax = params.fullAttackDiffMax
+        instance.fullAttackCaptureEase = params.fullAttackCaptureEase
+        instance.fullAttackProdWeight = params.fullAttackProdWeight
+        instance.fullAttackOverallWeight = params.fullAttackOverallWeight
 
         return instance
     end
@@ -28,7 +36,10 @@ function _m_init()
     function ExpandMind:suggestActions(map, mapTunnels, mapFuture, botUser)
         local candidates = {}
 
-        candidates = common_utils.combineLists(candidates, self:suggestPositiveRoiActions(map, mapTunnels, mapFuture, botUser))
+        local actions, positiveRoiTargets = self:suggestPositiveRoiActions(map, mapTunnels, mapFuture, botUser)
+        candidates = common_utils.combineLists(candidates, actions)
+
+        candidates = common_utils.combineLists(candidates, self:suggestFullAttackSafeActions(map, mapTunnels, mapFuture, botUser, positiveRoiTargets))
         
         return candidates
     end
@@ -40,7 +51,6 @@ function _m_init()
 
     function ExpandMind:suggestPositiveRoiActions(map, mapTunnels, mapFuture, botUser)
         local candidates = {}
-        -- TODO: mind for not sending as much from planets that have incoming friendly planets for efficiency purposes?
 
         -- TODO: A TEMPORARY HACK, tunnel from highest ships value
         -- TODO: send towards planet "vacuum style"
@@ -51,27 +61,85 @@ function _m_init()
             return candidates
         end
     
-        local friendlyPositiveRoiNeutralData, enemyPositiveRoiNeutralData = getNeutralsDataWithPositiveRoi(map, mapTunnels, botUser)
-        for i,data in ipairs(friendlyPositiveRoiNeutralData) do 
-            local initialPriority = self.roiWeight * data.roi + self.shipReturnsWeight * data.shipReturns 
-    
-            local to = mapTunnels:getTunnelAlias(from.n, data.target.n)
+        local positiveRoiTargets = getNeutralsDataWithPositiveRoi(map, mapTunnels, botUser)
+        for i,data in ipairs(positiveRoiTargets) do 
+            local initialPriority = self.roiWeight * data.roi * 0.5 + self.shipReturnsWeight * data.shipReturns 
             
-            local shipsRequired = self:getMinShipsToCapture(map, mapFuture, botUser, data.target)
+            local shipsRequired = getMinShipsToCapture(map, mapFuture, botUser, data.target)
 
             -- only send if the neutral won't already be captured by incoming fleets
             if shipsRequired >= 0 then
                 local percent = game_utils.percentToUse(from, shipsRequired)
 
-                local action = Action.newSend(initialPriority, self, "+RoI", {from}, data.target, percent)
+                local to = mapTunnels:getTunnelAlias(from.n, data.target.n)
+
+                local action = Action.newSend(initialPriority, self, "+RoI", {from}, to, percent)
                 table.insert(candidates, action)
             end
+        end
+
+        return candidates, positiveRoiTargets
+    end
+
+    function ExpandMind:suggestFullAttackSafeActions(map, mapTunnels, mapFuture, botUser, positiveRoiTargets)
+        local candidates = {}
+
+        -- TODO: A TEMPORARY HACK, tunnel from highest ships value
+        -- TODO: send towards planet "vacuum style"
+        -- See mod_watson, attackNeutral()
+        -- TODO: take into account enemy planets and/or examine planet futures
+        local from = common_utils.find(map:getPlanetList(botUser), function(o) return o.ships end)
+        if not from then
+            return candidates
+        end
+    
+        local safeTargets = getFullAttackSafeNeutrals(map, mapTunnels, mapFuture, botUser, positiveRoiTargets)
+        for i,data in ipairs(safeTargets) do
+            print("p: " .. data.target.ships .. ", diff: " .. data.shipDiff)
+
+            -- introduce various nonlinearities
+            local captureEase = common_utils.clamp(self.fullAttackDiffWeight * data.shipDiff - 10 * self.fullAttackDiffIntercept, 
+                self.fullAttackDiffMin * -10, self.fullAttackDiffMax * 10)
+            local initialPriority = self.fullAttackCaptureEase * captureEase / 5 + self.fullAttackProdWeight * data.target.production / 10
+            initialPriority = initialPriority * self.fullAttackOverallWeight
+    
+            local shipsRequired = getMinShipsToCapture(map, mapFuture, botUser, data.target)
+
+            if shipsRequired < 0 then 
+                print("SHOULD NEVERR GET HERE@@@@@@!!!!")
+            end
+            local percent = game_utils.percentToUse(from, shipsRequired)
+
+            local to = mapTunnels:getTunnelAlias(from.n, data.target.n)
+
+            local action = Action.newSend(initialPriority, self, "FullAttackSafe", {from}, to, percent)
+            table.insert(candidates, action)
         end
 
         return candidates
     end
 
-    function ExpandMind:getMinShipsToCapture(map, mapFuture, botUser, target)
+    function getFullAttackSafeNeutrals(map, mapTunnels, mapFuture, botUser, positiveRoiTargets)
+        local candidates = common_utils.findAll(map:getNeutralPlanetList(), function (target) return 
+            -- make sure planet isn't already accounted for in "positiveRoiTargets"
+            not common_utils.findFirst(positiveRoiTargets, function (o) return o.n == target.n end)
+            -- only send if the neutral won't already be captured by incoming fleets
+            and getMinShipsToCapture(map, mapFuture, botUser, target) >= 0
+        end)
+        local safeNeutrals = {}
+        for _,target in ipairs(candidates) do 
+            local ownsPlanetAtEnd, shipDiff = mapFuture:simulateAllOutAttack(map, mapTunnels, target, botUser)
+            if ownsPlanetAtEnd then 
+               table.insert(safeNeutrals, {
+                   target = target,
+                   shipDiff = shipDiff
+               }) 
+            end
+        end
+        return safeNeutrals
+    end
+
+    function getMinShipsToCapture(map, mapFuture, botUser, target)
         return target.ships - mapFuture:getNetIncomingShips(target)
     end
     
@@ -136,8 +204,7 @@ function _m_init()
         end
 
         -- now that tunnels have been figured out properly, return positive ROI data for both player and enemy
-        return getPositiveRoiNeutralData(map, mapTunnels, user, map:getNeutralPlanetList()), 
-            getPositiveRoiNeutralData(map, mapTunnels, enemyUser, map:getNeutralPlanetList())
+        return getPositiveRoiNeutralData(map, mapTunnels, user, map:getNeutralPlanetList())
     end
 
     return ExpandMind

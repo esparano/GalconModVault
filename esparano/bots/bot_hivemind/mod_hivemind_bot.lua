@@ -34,7 +34,14 @@ function initMinds(opts)
      -- sets positive RoI planets as tunnelable. Should analyze earlier than most other minds.
     table.insert(minds, ExpandMind.new({
         roiWeight = opts.optimized.expand_roiWeight,
-        shipReturnsWeight = opts.optimized.expand_shipReturnsWeight
+        shipReturnsWeight = opts.optimized.expand_shipReturnsWeight,
+        fullAttackDiffWeight = opts.optimized.expand_fullAttackDiffWeight,
+        fullAttackDiffIntercept = opts.optimized.expand_fullAttackDiffIntercept,
+        fullAttackDiffMin = opts.optimized.expand_fullAttackDiffMin,
+        fullAttackDiffMax = opts.optimized.expand_fullAttackDiffMax,
+        fullAttackCaptureEase = opts.optimized.expand_fullAttackCaptureEase,
+        fullAttackProdWeight = opts.optimized.expand_fullAttackProdWeight,
+        fullAttackOverallWeight = opts.optimized.expand_fullAttackOverallWeight,
     }))
     table.insert(minds, AttackMind.new())
     table.insert(minds, CenterControlMind.new())
@@ -57,6 +64,17 @@ function initMinds(opts)
     return minds
 end
 
+function getHome(map, mapTunnels, user)
+    return common_utils.find(map:getPlanetList(user.n), function(p) return p.production end)
+end
+
+function getHomesDistance(map, mapTunnels)
+    local users = map:getUserList(false)
+    local h1 = getHome(map, mapTunnels, users[1])
+    local h2 = getHome(map, mapTunnels, users[2])
+    return mapTunnels:getSimplifiedTunnelDist(h1.n, h2.n)
+end
+
 function bot_hivemind(params, sb_stats)
     ITEMS = params.items
     local botUser = ITEMS[params.user]
@@ -72,6 +90,13 @@ function bot_hivemind(params, sb_stats)
         optimized = {
             expand_roiWeight = 1,
             expand_shipReturnsWeight = 1,
+            expand_fullAttackDiffWeight = 1,
+            expand_fullAttackDiffIntercept = 1,
+            expand_fullAttackDiffMin = 1,
+            expand_fullAttackDiffMax = 1,
+            expand_fullAttackCaptureEase = 1,
+            expand_fullAttackProdWeight = 1,
+            expand_fullAttackOverallWeight = 1,
         }
         
     }
@@ -97,13 +122,19 @@ function bot_hivemind(params, sb_stats)
     local enemyUser = map:getEnemyUser(botUser.n)
 
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
+    -- update mapTunnelsData, then clone it for use in this function to avoid neutrals marked tunnelable from being permanently (mistakenly) tunnelable even if the map changes a lot
     mapTunnels = MapTunnels.new(ITEMS, MEM.mapTunnelsData)
+    mapTunnels = MapTunnels.new(ITEMS, common_utils.copy(MEM.mapTunnelsData))
+    -- TODO: mark planets that are about to be captured as tunnelable?
     mapFuture = MapFuture.new(ITEMS, botUser)
 
     if not MEM.initialized then
         MEM.initialized = true
         firstTurnSetup(params)
     end
+
+    -- local horizon = game_utils.distToTravelTime(getHomesDistance(map, mapTunnels))
+    -- print("horizon: " .. horizon)
 
     local move = getMove(map, mapTunnels, mapFuture, botUser, OPTS)
     print(move:getSummary())
@@ -149,6 +180,7 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts)
     for _,action in ipairs(candidates) do 
         for _,mind in ipairs(minds) do 
             if mind ~= action.mind then 
+                -- TODO: bias and multiplier for each mind's priority and adjustments? 4 parameters? Idk.
                 mind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
             end
         end
