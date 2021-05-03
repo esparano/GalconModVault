@@ -85,6 +85,17 @@ function _module_init()
     end
 
     -- TODO: test
+    function Map:getNonNeutralPlanetAndFleetList(ownerId)
+        if ownerId then ownerId = toUserId(ownerId) end
+        return common_utils.findAll(
+            self._items,
+            function(item)
+                return (item.is_planet or item.is_fleet) and (ownerId == nil or ownerId == item.owner) and not item.neutral
+            end
+        )
+    end
+
+    -- TODO: test
     function Map:getPlanetAndFleetList(ownerId)
         if ownerId then ownerId = toUserId(ownerId) end
         return common_utils.findAll(
