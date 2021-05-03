@@ -82,11 +82,30 @@ function _module_init()
         return corrections
     end
 
+    -- TODO: maybe instead, it's best to construct a grid and precompute congestionCorrections and tunnelDists for each grid bucket?
+    -- per unit distance, how large a congestion correction would there be, roughly? probably a fraction between 0.1 to 0.2.
+    local function getAvgCongestionCorrectionPerUnitDistance(items, planetInfo, congestionCorrections)
+        local sum = 0
+        local sumDist = 0
+        for sourceId,_ in pairs(planetInfo) do
+            local source = items[sourceId]
+            for targetId,_ in pairs(planetInfo) do
+                if sourceId ~= targetId then
+                    local target = items[targetId]
+                    sum = sum + congestionCorrections[sourceId][targetId]
+                    sumDist = sumDist + estimatedRealDistance(source, target, DEFAULT_TUNNEL_SHIPS_SENT, 0)
+                end
+            end
+        end
+        return sum / sumDist
+    end
+
     function MapTunnels.new(items, data)
         data = data or {}
         data.planetInfo = data.planetInfo or initPlanetInfo(items)
         data.tunnelInfo = data.tunnelInfo or initTunnelInfo(data.planetInfo)
         data.congestionCorrections = data.congestionCorrections or initCongestionCorrections(items, data.planetInfo)
+        data.avgCongestionCorrectionPerDist = data.avgCongestionCorrectionPerDist or getAvgCongestionCorrectionPerUnitDistance(items, data.planetInfo, data.congestionCorrections)
 
         local instance = {}
         for k, v in pairs(MapTunnels) do
@@ -125,6 +144,29 @@ function _module_init()
         local target = self.items[targetId]
         local congestionCorrection = self.data.congestionCorrections[sourceId][targetId]
         return estimatedRealDistance(source, target, numShipsSent, costOverride) + congestionCorrection
+    end
+
+    -- TODO: would be better to use grid-based precalculation approach rather than recalculating as needed.
+    function MapTunnels:getApproxFleetTunnelDist(fleetId, targetId)
+        local fleet = self.items[fleetId]
+        local target = self.items[targetId]
+
+        -- Fleet's "realDistance" plus an approximation of congestion corrections for a direct flight to "target".
+        local bestDist = (1 + self.data.avgCongestionCorrectionPerDist) * estimatedRealDistance(fleet, target, fleet.ships, fleet.ships/2)
+        
+        -- test if it's better to land fleet nearby and then tunnel to target
+        for aliasId,_ in pairs(self.data.planetInfo) do
+            local alias = self.items[aliasId]
+            if not alias.neutral then 
+                local distToAlias = (1 + self.data.avgCongestionCorrectionPerDist) * estimatedRealDistance(fleet, alias, fleet.ships, fleet.ships/2)
+                local totalTunnelDist = distToAlias + self:getSimplifiedTunnelDist(aliasId, targetId)
+                if totalTunnelDist < bestDist then 
+                    bestDist = totalTunnelDist
+                end
+            end 
+        end
+
+        return bestDist
     end
 
     function MapTunnels:getTunnelDist(sourceId, targetId, numShipsSent, costOverride)
