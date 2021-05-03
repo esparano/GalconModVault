@@ -4,6 +4,10 @@ function _common_utils_init()
     
     function common_utils.pass()
     end
+
+    function common_utils.boolToSign(bool)
+        return bool and 1 or -1
+    end
     
     function common_utils.shuffle(t)
         for i, v in ipairs(t) do
@@ -63,6 +67,7 @@ function _common_utils_init()
     end
 
     -- search list for the best match by greatest result
+    -- TODO: rename to "findBest?"
     function common_utils.find(Q, f)
         local r, v
         for _, o in pairs(Q) do
@@ -72,6 +77,14 @@ function _common_utils_init()
             end
         end
         return r
+    end
+
+    function common_utils.findFirst(items, predicate)
+        for _, item in pairs(items) do
+            if predicate(item) then
+                return item
+            end
+        end
     end
 
     function common_utils.findAll(items, predicate)
