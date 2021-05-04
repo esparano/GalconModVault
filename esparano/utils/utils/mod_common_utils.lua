@@ -87,7 +87,7 @@ function _common_utils_init()
         end
     end
 
-    function common_utils.findAll(items, predicate)
+    function common_utils.filter(items, predicate)
         local matches = {}
         for _, item in pairs(items) do
             if predicate(item) then

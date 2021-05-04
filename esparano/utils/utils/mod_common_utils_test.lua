@@ -145,9 +145,9 @@ function test_find()
     assert.equals(400, best)
 end
 
-function test_findAll()
+function test_filter()
     local list = {7, 1, 8, 3, 400, 1, 2}
-    local matches = common_utils.findAll(list, function (o) return o % 2 == 0 end)
+    local matches = common_utils.filter(list, function (o) return o % 2 == 0 end)
     assert.equals(3, #matches)
     assert.equals(8, matches[1])
     assert.equals(400, matches[2])

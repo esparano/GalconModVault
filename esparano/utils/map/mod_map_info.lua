@@ -66,7 +66,7 @@ function _module_init()
     -- TODO: refactor searching for planets/users/etc.
     function Map:getPlanetList(ownerId)
         if ownerId then ownerId = toUserId(ownerId) end
-        return common_utils.findAll(
+        return common_utils.filter(
             self._items,
             function(item)
                 return item.is_planet and (ownerId == nil or ownerId == item.owner)
@@ -76,7 +76,7 @@ function _module_init()
 
     function Map:getFleetList(ownerId)
         if ownerId then ownerId = toUserId(ownerId) end
-        return common_utils.findAll(
+        return common_utils.filter(
             self._items,
             function(item)
                 return item.is_fleet and (ownerId == nil or ownerId == item.owner)
@@ -87,7 +87,7 @@ function _module_init()
     -- TODO: test
     function Map:getNonNeutralPlanetAndFleetList(ownerId)
         if ownerId then ownerId = toUserId(ownerId) end
-        return common_utils.findAll(
+        return common_utils.filter(
             self._items,
             function(item)
                 return (item.is_planet or item.is_fleet) and (ownerId == nil or ownerId == item.owner) and not item.neutral
@@ -98,7 +98,7 @@ function _module_init()
     -- TODO: test
     function Map:getPlanetAndFleetList(ownerId)
         if ownerId then ownerId = toUserId(ownerId) end
-        return common_utils.findAll(
+        return common_utils.filter(
             self._items,
             function(item)
                 return (item.is_planet or item.is_fleet) and (ownerId == nil or ownerId == item.owner)
@@ -110,7 +110,7 @@ function _module_init()
         if includeNeutral == nil then
             includeNeutral = true
         end
-        return common_utils.findAll(
+        return common_utils.filter(
             self._items,
             function(item)
                 return item.is_user and (includeNeutral or not item.neutral)

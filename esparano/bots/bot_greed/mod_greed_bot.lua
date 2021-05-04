@@ -17,7 +17,7 @@ end
 -- TODO: in addition to safely capturable planets, we can possibly take even more planets if, by examining
 -- no-redirect planet futures in a simulated all-out attack, the planet does not change hands.
 
-function isPlanetSafeFromAllOutAttack(map, mapTunnels, user)
+function isPlanetSafeFromFullAttack(map, mapTunnels, user)
 
 end
 
@@ -66,7 +66,7 @@ end
 -- TODO: this should copy mapTunnels instead of modifying permanently?
 -- TODO: limit to number of ships that player actually has? (Repeat while total estimated return on investment before enemy arrival is > 0?)
 function identifyHighestRoiNeutral(map, mapTunnels, user)
-    local notTunnelablePlanets = common_utils.findAll(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p.n) end)
+    local notTunnelablePlanets = common_utils.filter(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p.n) end)
     local positiveRoiNeutralData = getPositiveRoiNeutralData(map, mapTunnels, user, notTunnelablePlanets)
     if #positiveRoiNeutralData > 0 then 
         local bestPositiveRoiNeutral = positiveRoiNeutralData[1].target
@@ -99,14 +99,14 @@ end
 -- a "front" planet is any "owned" (or planned-to-be-captured) planet that does not need to tunnel to attack its closest enemy planet
 -- will return empty list if there are no enemy planets
 function getFrontPlanets(map, mapTunnels, user, friendlyPlannedCapturesSet, enemyPlannedCapturesSet)
-    local friendlyPlanets = common_utils.findAll(map:getPlanetList(), 
+    local friendlyPlanets = common_utils.filter(map:getPlanetList(), 
         function (p) return p.owner == user.n or friendlyPlannedCapturesSet:contains(p.n) end
     )
     local enemyUser = map:getEnemyUser(user.n)
-    local enemyPlanets = common_utils.findAll(map:getPlanetList(), 
+    local enemyPlanets = common_utils.filter(map:getPlanetList(), 
         function (p) return p.owner == enemyUser.n or enemyPlannedCapturesSet:contains(p.n) end
     )
-    return common_utils.findAll(friendlyPlanets, 
+    return common_utils.filter(friendlyPlanets, 
         function (source)
             local closestEnemyPlanet = common_utils.find(enemyPlanets,
                 function (target) 
