@@ -69,6 +69,20 @@ function Set:union(set2)
     return union
 end 
 
+function Set:intersection(set2)
+    local intersection = Set.new()
+    local smaller = self
+    local larger = set2 
+    if smaller:size() > larger:size() then 
+        smaller = set2 
+        larger = self
+    end
+    for e in pairs(smaller._values) do
+      if larger:contains(e) then intersection:add(e) end
+    end
+    return intersection
+end
+
 function Set:randomItem()
     for e in pairs(self._values) do
         return e 

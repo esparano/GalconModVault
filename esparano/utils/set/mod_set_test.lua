@@ -12,6 +12,8 @@ function test_available_functions()
     assert.not_nil(Set.contains)
     assert.not_nil(Set.difference)
     assert.not_nil(Set.symmetricDifference)
+    assert.not_nil(Set.union)
+    assert.not_nil(Set.intersection)
     assert.not_nil(Set.contains)
 end
 
@@ -22,6 +24,8 @@ function test_local_functions()
     assert.is_nil(contains)
     assert.is_nil(difference)
     assert.is_nil(symmetricDifference)
+    assert.is_nil(union)
+    assert.is_nil(intersection)
     assert.is_nil(contains)
 end
 
@@ -169,6 +173,24 @@ function test_union_empty()
     assert.equals(2, reverseUnion:size())
 
     assert.equals(0, union:symmetricDifference(reverseUnion):size())
+end
+
+function test_intersection()
+    local set = Set.new()
+    set:add(1235)
+    set:add(5)
+    set:add(1)
+    local set2 = Set.new()
+    set2:add(7)
+    set2:add(5)
+    local intersection = set:intersection(set2)
+    local reverseIntersection = set2:intersection(set)
+
+    assert.is_true(intersection:contains(5))
+    assert.equals(1, intersection:size())
+
+    assert.is_true(reverseIntersection:contains(5))
+    assert.equals(1, reverseIntersection:size())
 end
 
 function test_random_item()
