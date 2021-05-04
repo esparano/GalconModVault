@@ -10,12 +10,18 @@ function test_available_functions()
     assert.not_nil(Set.addAll)
     assert.not_nil(Set.remove)
     assert.not_nil(Set.contains)
+    assert.not_nil(Set.difference)
+    assert.not_nil(Set.symmetricDifference)
+    assert.not_nil(Set.contains)
 end
 
 function test_local_functions()
     assert.is_nil(add)
     assert.is_nil(addAll)
     assert.is_nil(remove)
+    assert.is_nil(contains)
+    assert.is_nil(difference)
+    assert.is_nil(symmetricDifference)
     assert.is_nil(contains)
 end
 
@@ -57,14 +63,14 @@ function test_add_remove_and_contains_table()
     assert.is_false(set:contains(t))
 end
 
-function test_diff()
+function test_difference()
     local set = Set.new()
     set:add(5)
     set:add(1)
     local set2 = Set.new()
     set2:add(1)
-    local left_diff = set:diff(set2)
-    local right_diff = set2:diff(set)
+    local left_diff = set:difference(set2)
+    local right_diff = set2:difference(set)
 
     assert.is_true(left_diff:contains(5))
     assert.is_false(left_diff:contains(1))
@@ -73,19 +79,96 @@ function test_diff()
     assert.is_false(right_diff:contains(1))
 end
 
-function test_diff_empty()
+function test_difference_empty()
     local set = Set.new()
     set:add(5)
     set:add(1)
     local set2 = Set.new()
-    local left_diff = set:diff(set2)
-    local right_diff = set2:diff(set)
+    local left_diff = set:difference(set2)
+    local right_diff = set2:difference(set)
 
     assert.is_true(left_diff:contains(5))
     assert.is_true(left_diff:contains(1))
 
     assert.is_false(right_diff:contains(5))
     assert.is_false(right_diff:contains(1))
+end
+
+function test_symmetric_difference()
+    local set = Set.new()
+    set:add(5)
+    set:add(1)
+    local set2 = Set.new()
+    set2:add(1)
+    local left_diff = set:symmetricDifference(set2)
+    local right_diff = set2:symmetricDifference(set)
+
+    assert.equals(1, left_diff:size())
+    assert.is_true(left_diff:contains(5))
+    assert.is_false(left_diff:contains(1))
+
+    assert.equals(1, right_diff:size())
+    assert.is_true(right_diff:contains(5))
+    assert.is_false(right_diff:contains(1))
+end
+
+function test_symmetric_difference_empty()
+    local set = Set.new()
+    set:add(5)
+    set:add(1)
+    local set2 = Set.new()
+    local left_diff = set:symmetricDifference(set2)
+    local right_diff = set2:symmetricDifference(set)
+
+    assert.equals(2, left_diff:size())
+    assert.is_true(left_diff:contains(5))
+    assert.is_true(left_diff:contains(1))
+
+    assert.equals(2, right_diff:size())
+    assert.is_true(right_diff:contains(5))
+    assert.is_true(right_diff:contains(1))
+end
+
+function test_union()
+    local set = Set.new()
+    set:add(5)
+    set:add(1)
+    local set2 = Set.new()
+    set2:add(7)
+    set2:add(5)
+    local union = set:union(set2)
+
+    assert.is_true(union:contains(5))
+    assert.is_true(union:contains(1))
+    assert.is_true(union:contains(7))
+    assert.equals(3, union:size())
+
+    local reverseUnion = set2:union(set)
+    assert.is_true(reverseUnion:contains(5))
+    assert.is_true(reverseUnion:contains(1))
+    assert.is_true(reverseUnion:contains(7))
+    assert.equals(3, reverseUnion:size())
+
+    assert.equals(0, union:symmetricDifference(reverseUnion):size())
+end
+
+function test_union_empty()
+    local set = Set.new()
+    set:add(5)
+    set:add(1)
+    local set2 = Set.new()
+    local union = set:union(set2)
+
+    assert.is_true(union:contains(5))
+    assert.is_true(union:contains(1))
+    assert.equals(2, union:size())
+
+    local reverseUnion = set2:union(set)
+    assert.is_true(reverseUnion:contains(5))
+    assert.is_true(reverseUnion:contains(1))
+    assert.equals(2, reverseUnion:size())
+
+    assert.equals(0, union:symmetricDifference(reverseUnion):size())
 end
 
 function test_random_item()

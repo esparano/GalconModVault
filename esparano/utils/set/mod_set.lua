@@ -38,13 +38,36 @@ function Set:contains(key)
     return self._values[key] ~= nil
 end
 
-function Set:diff(set2) -- set difference
+ -- set difference, not symmetric!
+function Set:difference(set2)
     local diff = Set.new()
     for e in pairs(self._values) do
       if not set2:contains(e) then diff:add(e) end
     end
     return diff
 end
+
+function Set:symmetricDifference(set2)
+    local diff = Set.new()
+    for e in pairs(self._values) do
+      if not set2:contains(e) then diff:add(e) end
+    end
+    for e in pairs(set2._values) do
+        if not self:contains(e) then diff:add(e) end
+    end
+    return diff
+end
+
+function Set:union(set2)
+    local union = Set.new()
+    for e in pairs(self._values) do
+        union:add(e)
+    end
+    for e in pairs(set2._values) do
+        union:add(e)
+    end
+    return union
+end 
 
 function Set:randomItem()
     for e in pairs(self._values) do
