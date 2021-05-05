@@ -131,10 +131,6 @@ function bot_hivemind(params, sb_stats)
     end
     local enemyUser = map:getEnemyUser(botUser.n)
 
-    for i,fleet in ipairs(map:getFleetList()) do 
-        print("fleet ships: " .. fleet.ships)
-    end
-
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
     MEM.plans = MEM.plans or {}
     -- update mapTunnelsData, then clone it for use in this function to avoid neutrals marked tunnelable from being permanently (mistakenly) tunnelable even if the map changes a lot
@@ -147,9 +143,6 @@ function bot_hivemind(params, sb_stats)
         MEM.initialized = true
         firstTurnSetup(params)
     end
-
-    -- local horizon = game_utils.distToTravelTime(getHomesDistance(map, mapTunnels))
-    -- print("horizon: " .. horizon)
 
     local move = getMove(map, mapTunnels, mapFuture, botUser, OPTS, MEM)
     print("CHOOSING MOVE: " .. move:getSummary())
@@ -311,16 +304,39 @@ function doCombineActions(a1, a2)
     elseif a1.actionType == ACTION_TYPE_SEND then 
         -- combine from same sources, adding percentages
         if sourcesEquivalent then 
-            -- TODO: combining percents may not be perfectly efficient
+            -- TODO: combining percents may not be perfectly efficient because ceil(a) + ceil(b) >= ceil(a + b)
             local percent = a1.percent + a2.percent 
             if percent > 100 then return end 
 
             return Action.newSend(priority, a1.mind, desc, combinedPlans, a1.sources, a1.target, percent)
         -- TODO: for now, only combine if sources are completely disjoint
         elseif sourcesAreDisjoint then
-            local combinedSources = common_utils.combineLists(a1.sources, a2.sources)
+            -- if percents are too different, don't try to combine
+            if math.abs(a1.percent - a2.percent) > 40 then return end
 
-            return Action.newSend(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target, a1.percent)
+            local combinedSources = common_utils.combineLists(a1.sources, a2.sources)
+            
+            -- if percents are the same, this is easy.
+            if a1.percent == a2.percent then
+                return Action.newSend(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target, a1.percent)
+            end
+
+            -- we want to send the same number of ships, if possible, so send a single percentage that sends the same number
+            -- TODO: combining percents may not be perfectly efficient because ceil(a) + ceil(b) + ... >= ceil(a + b + ...)
+            local shipsToSend = 0
+            local totalAvailable = 0
+            for i,source in ipairs(a1.sources) do 
+                shipsToSend = shipsToSend + a1.percent / 100 * source.ships
+                totalAvailable = totalAvailable + source.ships
+            end
+            for i,source in ipairs(a2.sources) do 
+                shipsToSend = shipsToSend + a2.percent / 100 * source.ships
+                totalAvailable = totalAvailable + source.ships
+            end
+            local combinedPercent = math.ceil(shipsToSend / totalAvailable * 100 / 5) * 5
+            assert.is_true(combinedPercent >= 5 and combinedPercent <= 100)
+
+            return Action.newSend(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target, combinedPercent)
         end
     end
 end

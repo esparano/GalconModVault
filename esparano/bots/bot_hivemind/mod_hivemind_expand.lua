@@ -41,6 +41,8 @@ function _m_init()
         end
     end
 
+    -- TODO: shuttle ships towards planets that will be expanded so that we can expand faster if we want? Shuttle ships towards planets that are close to + shipdiff and good returns/prod?
+
     -- return whether plan is satisfied already, 
     -- and if not satisfied yet, returns fullAttackData
     function ExpandMind:updatePlannedCapture(map, mapTunnels, mapFuture, botUser, targetN)

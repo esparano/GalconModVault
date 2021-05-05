@@ -69,7 +69,7 @@ function _m_init()
         local description
         if self:isSend() then 
             local sourceShips = common_utils.joinToString(common_utils.map(self.sources, function (f) return common_utils.round(f.ships) end), ",")
-            description = "s [" .. sourceShips .. "] " .. self.percent .. "% -> " .. self.target.ships
+            description = "s [" .. sourceShips .. "] " .. self.percent .. "% -> " .. common_utils.toPrecision(self.target.ships, 1)
         elseif self:isRedirect() then 
             description = "r " .. common_utils.round(common_utils.sumList(common_utils.map(self.sources, function (f) return f.ships end)))
                 .. "s -> " .. self.target.ships
