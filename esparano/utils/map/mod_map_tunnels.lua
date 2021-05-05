@@ -208,28 +208,40 @@ function _module_init()
             converged = true
             iterations = iterations + 1
 
+            -- get pairs of source/target and sort by increasing current tunnelDistance
+            local sortedPairs = {}
             for sourceId,s in pairs(self.data.tunnelInfo) do
                 if aliasCandidate.n ~= sourceId then 
-                    -- is going DIRECTLY to candidate better (NOT tunneling to candidate first)?
-                    local sourceToCandidateDist = self:getCongestionCorrectedDistance(sourceId, aliasCandidate.n, DEFAULT_TUNNEL_SHIPS_SENT, 0)
-                    for targetId,tunnelInfo in pairs(s) do
-                        if aliasCandidate.n ~= targetId then 
-
-                            local currentTunnelDist = self:getSimplifiedTunnelDist(sourceId, targetId)
-                            local candidateToTargetTunnelDist = self:getSimplifiedTunnelDist(aliasCandidate.n, targetId)
-
-                            -- if "candidateAlias" is a faster way to get to "alias", then 
-                            -- only update if more than 1 distance unit faster, to avoid floating point errors leading to infinite loops.
-                            if common_utils.toPrecision(sourceToCandidateDist + candidateToTargetTunnelDist, 1) < common_utils.toPrecision(currentTunnelDist, 1) then 
-                                tunnelInfo.aliasId = aliasCandidate.n
-                                -- other tunnels may be affected by this, causing a cascade of recalculations to be necessary
-                                self:invalidateTunnelDists()
-                                tunnelInfo.tunnelDist = sourceToCandidateDist + candidateToTargetTunnelDist
-                            
-                                converged = false
-                            end
+                    for targetId,_ in pairs(s) do
+                        if aliasCandidate.n ~= targetId then
+                            table.insert(sortedPairs, {sourceId = sourceId, targetId = targetId})
                         end
                     end
+                end
+            end
+            table.sort(sortedPairs, function(p1, p2) 
+                return self:getSimplifiedTunnelDist(p1.sourceId, p1.targetId) < self:getSimplifiedTunnelDist(p2.sourceId, p2.targetId)
+            end)
+
+            for i,p in ipairs(sortedPairs) do
+                local sourceId = p.sourceId 
+                local targetId = p.targetId
+                local tunnelInfo = self.data.tunnelInfo[sourceId][targetId]
+                -- is going DIRECTLY to candidate better (NOT tunneling to candidate first)?
+                local sourceToCandidateDist = self:getCongestionCorrectedDistance(sourceId, aliasCandidate.n, DEFAULT_TUNNEL_SHIPS_SENT, 0)
+
+                local currentTunnelDist = self:getSimplifiedTunnelDist(sourceId, targetId)
+                local candidateToTargetTunnelDist = self:getSimplifiedTunnelDist(aliasCandidate.n, targetId)
+
+                -- if "candidateAlias" is a faster way to get to "alias", then 
+                -- only update if more than 1 distance unit faster, to avoid floating point errors leading to infinite loops.
+                if common_utils.toPrecision(sourceToCandidateDist + candidateToTargetTunnelDist, 1) < common_utils.toPrecision(currentTunnelDist, 1) then 
+                    tunnelInfo.aliasId = aliasCandidate.n
+                    -- other tunnels may be affected by this, causing a cascade of recalculations to be necessary
+                    self:invalidateTunnelDists()
+                    tunnelInfo.tunnelDist = sourceToCandidateDist + candidateToTargetTunnelDist
+                
+                    converged = false
                 end
             end
             if iterations > 5 then 
