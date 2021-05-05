@@ -170,7 +170,7 @@ function init()
         total = 0,
         timeout = 300.0,
         players = 2, -- max number of players in a round
-        speed = 1, -- more time per loop, 15 max (1/4 second)
+        speed = 0.4, -- more time per loop, 15 max (1/4 second)
         ticks = 1, -- more loops per frame
         -- speed = 12, -- more time per loop, 15 max (1/4 second)
         -- ticks = 40, -- more loops per frame

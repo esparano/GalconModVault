@@ -1,14 +1,14 @@
 require("mod_hivemind_action")
 require("mod_common_utils")
 
+ACTION_TYPE_SEND = "s"
+ACTION_TYPE_REDIRECT = "r"
+ACTION_TYPE_PASS = "p"
+
 function _m_init()
     local Action = {}
-
-    local ACTION_TYPE_SEND = "s"
-    local ACTION_TYPE_REDIRECT = "r"
-    local ACTION_TYPE_PASS = "p"
-
-    function Action._new(initialPriority, mind, description, actionType, sources, target, percent)
+    
+    function Action._new(initialPriority, mind, description, actionType, plans, sources, target, percent)
         local instance = {}
         for k, v in pairs(Action) do
             instance[k] = v
@@ -18,6 +18,7 @@ function _m_init()
         instance.mind = mind 
         instance.description = description
         instance.actionType = actionType
+        instance.plans = plans
         instance.sources = sources
         instance.target = target
         instance.percent = percent
@@ -26,16 +27,17 @@ function _m_init()
         return instance
     end
 
-    function Action.newSend(initialPriority, mind, description, sources, target, percent)
-        return Action._new(initialPriority, mind, description, ACTION_TYPE_SEND, sources, target, percent)
+    -- plan may be nil if there is no plan
+    function Action.newSend(initialPriority, mind, description, plans, sources, target, percent)
+        return Action._new(initialPriority, mind, description, ACTION_TYPE_SEND, plans, sources, target, percent)
     end
 
-    function Action.newRedirect(initialPriority, mind, description, sources, target)
-        return Action._new(initialPriority, mind, description, ACTION_TYPE_REDIRECT, sources, target)
+    function Action.newRedirect(initialPriority, mind, description, plans, sources, target)
+        return Action._new(initialPriority, mind, description, ACTION_TYPE_REDIRECT, plans, sources, target)
     end
 
     function Action.newPass(initialPriority, mind, description)
-        return Action._new(initialPriority, mind, description, ACTION_TYPE_PASS)
+        return Action._new(initialPriority, mind, description, ACTION_TYPE_PASS, {})
     end
 
     function Action:isSend()
@@ -67,7 +69,7 @@ function _m_init()
         local description
         if self:isSend() then 
             local sourceShips = common_utils.joinToString(common_utils.map(self.sources, function (f) return common_utils.round(f.ships) end), ",")
-            description = "s [" .. sourceShips .. "] -> " .. self.target.ships
+            description = "s [" .. sourceShips .. "] " .. self.percent .. "% -> " .. self.target.ships
         elseif self:isRedirect() then 
             description = "r " .. common_utils.round(common_utils.sumList(common_utils.map(self.sources, function (f) return f.ships end)))
                 .. "s -> " .. self.target.ships

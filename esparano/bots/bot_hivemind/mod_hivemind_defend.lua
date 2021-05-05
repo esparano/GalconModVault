@@ -22,6 +22,7 @@ function _m_init()
         return {}
     end
 
+    -- TODO: figure out how to deal with expansion logic while defending???
     function DefendMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
 
     end

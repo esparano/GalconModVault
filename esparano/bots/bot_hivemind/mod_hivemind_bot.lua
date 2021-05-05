@@ -29,38 +29,43 @@ function firstTurnSetup(params)
     print("first turn setup")
 end
 
+function getOptsForMind(mindName, opts)
+    local mindOpts = {}
+    for k,v in pairs(opts.optimized) do 
+        local tokens = {}
+        for token in string.gmatch(k, "[^_]+") do 
+            table.insert(tokens, token)
+        end
+        if string.lower(tokens[1]) == string.lower(mindName) then 
+            local optKey = string.sub(k,  #mindName + 2)
+            mindOpts[optKey] = v
+        end
+    end
+    return mindOpts
+end
+
 function initMinds(opts) 
     local minds = {}
      -- sets positive RoI planets as tunnelable. Should analyze earlier than most other minds.
-    table.insert(minds, ExpandMind.new({
-        roiWeight = opts.optimized.expand_roiWeight,
-        shipReturnsWeight = opts.optimized.expand_shipReturnsWeight,
-        fullAttackDiffWeight = opts.optimized.expand_fullAttackDiffWeight,
-        fullAttackDiffIntercept = opts.optimized.expand_fullAttackDiffIntercept,
-        fullAttackDiffMin = opts.optimized.expand_fullAttackDiffMin,
-        fullAttackDiffMax = opts.optimized.expand_fullAttackDiffMax,
-        fullAttackCaptureEase = opts.optimized.expand_fullAttackCaptureEase,
-        fullAttackProdWeight = opts.optimized.expand_fullAttackProdWeight,
-        fullAttackOverallWeight = opts.optimized.expand_fullAttackOverallWeight,
-    }))
-    table.insert(minds, AttackMind.new())
-    table.insert(minds, CenterControlMind.new())
-    table.insert(minds, CleanupMind.new())
-    table.insert(minds, ClusterControlMind.new())
-    table.insert(minds, DefendRushMind.new())
-    table.insert(minds, DefendMind.new())
-    table.insert(minds, EvenDistributionMind.new())
-    table.insert(minds, ExploitEmptyMind.new())
-    table.insert(minds, FeedFrontMind.new())
-    table.insert(minds, FleeTrickMind.new())
-    table.insert(minds, FloatMind.new())
-    table.insert(minds, MidRushMind.new())
-    table.insert(minds, OvercaptureMind.new())
-    table.insert(minds, PassMind.new())
-    table.insert(minds, RedirectTrickMind.new())
-    table.insert(minds, RushMind.new())
-    table.insert(minds, SwapMind.new())
-    table.insert(minds, TimerTrickMind.new())
+    table.insert(minds, ExpandMind.new(getOptsForMind("expand", opts)))
+    table.insert(minds, AttackMind.new(getOptsForMind("attack", opts)))
+    table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", opts)))
+    table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", opts)))
+    table.insert(minds, ClusterControlMind.new(getOptsForMind("clustercontrol", opts)))
+    table.insert(minds, DefendRushMind.new(getOptsForMind("defendrush", opts)))
+    table.insert(minds, DefendMind.new(getOptsForMind("defend", opts)))
+    table.insert(minds, EvenDistributionMind.new(getOptsForMind("evendistribution", opts)))
+    table.insert(minds, ExploitEmptyMind.new(getOptsForMind("exploitempty", opts)))
+    table.insert(minds, FeedFrontMind.new(getOptsForMind("feedfront", opts)))
+    table.insert(minds, FleeTrickMind.new(getOptsForMind("fleetrick", opts)))
+    table.insert(minds, FloatMind.new(getOptsForMind("float", opts)))
+    table.insert(minds, MidRushMind.new(getOptsForMind("midrush", opts)))
+    table.insert(minds, OvercaptureMind.new(getOptsForMind("overcapture", opts)))
+    table.insert(minds, PassMind.new(getOptsForMind("pass", opts)))
+    table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", opts)))
+    table.insert(minds, RushMind.new(getOptsForMind("rush", opts)))
+    table.insert(minds, SwapMind.new(getOptsForMind("swap", opts)))
+    table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", opts)))
     return minds
 end
 
@@ -97,6 +102,11 @@ function bot_hivemind(params, sb_stats)
             expand_fullAttackCaptureEase = 1,
             expand_fullAttackProdWeight = 1,
             expand_fullAttackOverallWeight = 1,
+            expand_planContinuityBonus = 1,
+            expand_gainedShipsWeight = 1,
+            expand_targetCostWeight = 1,
+            expand_ownedPlanetMaxShipLoss = 1,
+            expand_negativeRoiReductionFactor = 1
         }
         
     }
@@ -121,11 +131,16 @@ function bot_hivemind(params, sb_stats)
     end
     local enemyUser = map:getEnemyUser(botUser.n)
 
+    for i,fleet in ipairs(map:getFleetList()) do 
+        print("fleet ships: " .. fleet.ships)
+    end
+
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
+    MEM.plans = MEM.plans or {}
     -- update mapTunnelsData, then clone it for use in this function to avoid neutrals marked tunnelable from being permanently (mistakenly) tunnelable even if the map changes a lot
     mapTunnels = MapTunnels.new(ITEMS, MEM.mapTunnelsData)
     mapTunnels = MapTunnels.new(ITEMS, common_utils.copy(MEM.mapTunnelsData))
-    -- TODO: mark planets that are about to be captured as tunnelable?
+
     mapFuture = MapFuture.new(ITEMS, botUser)
 
     if not MEM.initialized then
@@ -136,8 +151,8 @@ function bot_hivemind(params, sb_stats)
     -- local horizon = game_utils.distToTravelTime(getHomesDistance(map, mapTunnels))
     -- print("horizon: " .. horizon)
 
-    local move = getMove(map, mapTunnels, mapFuture, botUser, OPTS)
-    print(move:getSummary())
+    local move = getMove(map, mapTunnels, mapFuture, botUser, OPTS, MEM)
+    print("CHOOSING MOVE: " .. move:getSummary())
 
     -- DEBUG DRAWING
     -- if OPTS.debug.drawFriendlyFrontPlanets then 
@@ -154,7 +169,7 @@ function bot_hivemind(params, sb_stats)
     -- end
 
     local ticks, alloc = sb_stats()
-    print("ticks, alloc = " .. ticks .. " , " .. alloc)
+    -- print("ticks, alloc = " .. ticks .. " , " .. alloc)
 
     if not move or move.mind.name == "Pass" then 
         return 
@@ -165,9 +180,19 @@ function bot_hivemind(params, sb_stats)
     return {percent = move.percent, from = sources, to = move.target.n}
 end
 
-function getMove(map, mapTunnels, mapFuture, botUser, opts)
+function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     -- TODO: params for genetic algorithm
     local minds = initMinds(opts);
+
+    -- update minds' state with chosen plans and update saved plans.
+    for _,mind in ipairs(minds) do 
+        for _,plan in ipairs(mem.plans) do 
+            if mind.name == plan.mindName then
+                mind:processPlan(map, mapTunnels, mapFuture, botUser, plan)
+            end
+        end
+    end
+    mem.plans = common_utils.filter(mem.plans, function (p) return not p.satisfied end)
 
     local candidates = {}
     for _,mind in ipairs(minds) do 
@@ -178,20 +203,126 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts)
     end
 
     for _,action in ipairs(candidates) do 
-        for _,mind in ipairs(minds) do 
-            if mind ~= action.mind then 
-                -- TODO: bias and multiplier for each mind's priority and adjustments? 4 parameters? Idk.
-                mind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
-            end
-        end
+        gradeAction(action, minds)
     end
+
+    candidates = getCombinedActions(candidates, minds)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
     table.sort(candidates, function (a, b) 
         return a:getOverallPriority() > b:getOverallPriority() end
     )
 
-    return candidates[1], candidates
+    -- for i,a in ipairs(candidates) do 
+    --     print(a:getSummary())
+    -- end
+
+    local chosenAction = candidates[1]
+    mem.plans = common_utils.combineLists(mem.plans, chosenAction.plans)
+
+    return chosenAction, candidates
+end
+
+function gradeAction(action, minds)
+    for _,mind in ipairs(minds) do 
+        if mind ~= action.mind then
+            -- TODO: bias and multiplier for each mind's priority and adjustments? 4 parameters? Idk.
+            mind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+        end
+    end
+end
+
+function getCombinedActions(actions, minds)
+    local allActions = common_utils.shallow_copy(actions)
+    local newActions = common_utils.shallow_copy(actions) 
+
+    -- keep track of the raw/base constituent actions.
+    local comboActionSourceMap = {}
+    for _,a in ipairs(allActions) do
+        comboActionSourceMap[a] = Set.new({a})
+    end
+
+    local iterations = 1
+    local MAX_ITERATIONS = 4
+    while #newActions > 0 and iterations < MAX_ITERATIONS do
+        local nextNewActions = {}
+
+        for i,a1 in ipairs(allActions) do
+            for j,a2 in ipairs(newActions) do 
+                if i < j or iterations > 1 then 
+                    -- Combined actions may not have any base actions in common.
+                    if comboActionSourceMap[a1]:intersection(comboActionSourceMap[a2]):size() == 0 then 
+                        local a = combineActions(a1, a2)
+                        if a then
+                            comboActionSourceMap[a] = comboActionSourceMap[a1]:union(comboActionSourceMap[a2])
+                            gradeAction(a, minds)
+                            table.insert(nextNewActions, a) 
+                        end
+                    end
+                end
+            end
+        end
+
+        allActions = common_utils.combineLists(allActions, nextNewActions)
+        newActions = nextNewActions
+
+        iterations = iterations + 1
+    end
+    if iterations > MAX_ITERATIONS then
+        print("WARNING: TOOK MORE THAN " .. MAX_ITERATIONS .. " to combine actions")
+    end
+    return allActions
+end
+
+-- TODO: provide bonus for moves that move a lot of ships? (large movements rather than a few small ones?? for efficiency?)
+-- 
+
+function combineActions(a1, a2)
+    -- incompatible actions
+    if a1.actionType ~= a2.actionType then return end
+    if a1.target.n ~= a2.target.n then return end
+    -- TODO: how to combine actions from different minds??
+    if a1.mind.name ~= a2.mind.name then return end
+    local combinedAction = doCombineActions(a1, a2)
+    return combinedAction
+end
+
+function doCombineActions(a1, a2)
+    local priority = a1.initialPriority + a2.initialPriority
+    local desc = "COMBO{".. a1.description .. "|" .. a2.description .. "}"
+
+    local a1SourceIdSet = Set.new()
+    a1SourceIdSet:addAll(common_utils.map(a1.sources, function (s) return s.n end))
+    local a2SourceIdSet = Set.new()
+    a2SourceIdSet:addAll(common_utils.map(a2.sources, function (s) return s.n end))
+    local sourcesEquivalent = a1SourceIdSet:symmetricDifference(a2SourceIdSet):size() == 0 
+    local sourcesAreDisjoint = a1SourceIdSet:intersection(a2SourceIdSet):size() == 0 
+
+    local combinedPlans = {}
+    combinedPlans = common_utils.combineLists(combinedPlans, a1.plans)
+    combinedPlans = common_utils.combineLists(combinedPlans, a2.plans)
+
+    if a1.actionType == ACTION_TYPE_REDIRECT then
+        -- TODO: for now, only combine if sources are not intersecting at all.
+        if sourcesEquivalent then
+            local combinedSources = common_utils.combineLists(a1.sources, a2.sources)
+            return Action.newRedirect(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target)
+        end
+    elseif a1.actionType == ACTION_TYPE_SEND then 
+        -- combine from same sources, adding percentages
+        if sourcesEquivalent then 
+            -- TODO: combining percents may not be perfectly efficient
+            local percent = a1.percent + a2.percent 
+            if percent > 100 then return end 
+
+            return Action.newSend(priority, a1.mind, desc, combinedPlans, a1.sources, a1.target, percent)
+        -- TODO: for now, only combine if sources are completely disjoint
+        elseif sourcesAreDisjoint then
+            local combinedSources = common_utils.combineLists(a1.sources, a2.sources)
+
+            return Action.newSend(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target, a1.percent)
+        end
+    end
 end
 
 function debugDrawTunnels(botUser, map, mapTunnels, owner, targets)
