@@ -57,10 +57,16 @@ function _common_utils_init()
         if type(o) == 'table' then
             local s = '{ '
             for k,v in pairs(o) do
-                if type(k) ~= 'number' then k = '"'..k..'"' end
-                s = s .. '['..k..'] = ' .. common_utils.dump(v) .. ','
+                if type(v) == 'function' then 
+                    s = s .. k .. '(),'
+                else
+                    if type(k) ~= 'number' then k = '"'..k..'"' end
+                    s = s .. '['..k..'] = ' .. common_utils.dump(v) .. ','
+                end
             end
             return s .. '} '
+        elseif type(o) == 'function' then 
+            return 'function()'
         else
             return tostring(o)
         end
