@@ -11,7 +11,8 @@ function _module_init()
         for _,item in pairs(items) do
             if item.is_planet then 
                 planetInfo[item.n] = {
-                    tunnelable = false
+                    tunnelable = false,
+                    n = item.n
                 }
             end
         end
@@ -257,6 +258,39 @@ function _module_init()
 
     function MapTunnels:isTunnelable(planetId)
         return self.data.planetInfo[planetId].tunnelable 
+    end
+
+    -- a "front" planet is any "owned" (or planned-to-be-captured) planet that does not need to tunnel to attack its closest enemy planet
+    -- will return empty list if there are no enemy planets
+    function MapTunnels:getFrontPlanets(user, friendlyPlannedCapturesSet, enemyPlannedCapturesSet)
+        friendlyPlannedCapturesSet = friendlyPlannedCapturesSet or Set.new()
+        enemyPlannedCapturesSet = enemyPlannedCapturesSet or Set.new()
+
+        local friendlyPlanets = common_utils.filter(self.data.planetInfo, 
+            function (info) 
+                local p = self.items[info.n]
+                return p.owner == user.n or friendlyPlannedCapturesSet:contains(info.n) 
+            end
+        )
+        local enemyPlanets = common_utils.filter(self.data.planetInfo,
+            function (info)
+                local p = self.items[info.n]
+                return (p.owner ~= user.n and not p.neutral) or enemyPlannedCapturesSet:contains(info.n) 
+            end
+        )
+        local resultInfos = common_utils.filter(friendlyPlanets, 
+            function (sourceInfo)
+                local closestEnemyInfo = common_utils.find(enemyPlanets,
+                    function (targetInfo) 
+                        return - mapTunnels:getSimplifiedTunnelDist(sourceInfo.n, targetInfo.n) 
+                    end
+                )
+                if closestEnemyInfo == nil then return false end 
+                local alias = mapTunnels:getTunnelAlias(sourceInfo.n, closestEnemyInfo.n)
+                return alias.owner ~= user.n and not friendlyPlannedCapturesSet:contains(alias.n)
+            end
+        )
+        return common_utils.map(resultInfos, function (info) return self.items[info.n] end)
     end
 
     return MapTunnels

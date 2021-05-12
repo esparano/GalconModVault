@@ -207,6 +207,8 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
         gradeAction(action, minds)
     end
 
+    candidates = common_utils.filter(candidates, function (a) return a:getOverallPriority() >= 0 end)
+
     -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
     -- Instead, the highest-priority move should track and apply its reservations and only then determine if the secondary action is compatible.
     -- TODO: THe way that moves with different percentages get combined, it may break "reservations" slightly.
@@ -260,7 +262,9 @@ function getCombinedActions(actions, minds, multiselect)
                         if a then
                             comboActionSourceMap[a] = comboActionSourceMap[a1]:union(comboActionSourceMap[a2])
                             gradeAction(a, minds)
-                            table.insert(nextNewActions, a) 
+                            if a:getOverallPriority() > 0 then 
+                                table.insert(nextNewActions, a) 
+                            end
                         end
                     end
                 end
@@ -289,6 +293,8 @@ function combineActions(a1, a2, multiSelect)
     if a1.target.n ~= a2.target.n then return end
     -- TODO: how to combine actions from different minds??
     if a1.mind.name ~= a2.mind.name then return end
+    -- TODO: for now, only combine new plans with old plans or 2 old plans, etc.
+    if #a1.plans > 0 and #a2.plans > 0 then return end
     local combinedAction = doCombineActions(a1, a2)
     return combinedAction
 end

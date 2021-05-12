@@ -28,6 +28,7 @@ function _module_init()
         instance.botUser = botUser
         instance.items = items
         instance.planetInfo = initPlanetInfo(items)
+        instance.reservations = {}
 
         instance:_constructFutures()
 
@@ -55,6 +56,18 @@ function _module_init()
         return self.planetInfo[planet.n].netIncomingShips
     end
 
+    function MapFuture:getReservations()
+        return self.reservations
+    end
+
+    function MapFuture:updateReservations(updater, updatee)
+        updatee = updatee or self.reservations
+        for k,v in pairs(updater) do 
+            updatee[k] = updatee[k] or 0
+            updatee[k] = updatee[k] + v
+        end
+    end
+
     -- simulate until all fleets landed and last planet has arrived (and prod is felt)
     -- Returns whether the capturingUser owns the planet at end of simulation and the difference in ships at end
     -- Also returns the planets/fleets in distance order from the target from the first time a planet either changes hands or finds enemy resistance.
@@ -62,14 +75,16 @@ function _module_init()
     --  positive shipDiff but owned = false indicates enemy presence was too strong to capture
     --  positive shipDiff and owned = true indicates that the defense succeeded by "shipDiff" ships
     function MapFuture:simulateFullAttack(map, mapTunnels, target, capturingUser, reservations, allowRedirects)
-        reservations = reservations or {}
+        reservations = reservations or self.reservations
         -- sort both fleets and planets by tunnel distance to target
         local sourceData = common_utils.map(map:getNonNeutralPlanetAndFleetList(), function (o) 
             local data = {
                 source = o,
             }
             if o.is_fleet then
-                if allowRedirects then 
+                -- ALWAYS allow enemy to redirect
+                if allowRedirects or o.owner ~= capturingUser.n then
+                    -- TODO: discretize into 1/4 second increment buckets?
                     data.dist = mapTunnels:getApproxFleetTunnelDist(o.n, target.n)
                 else
                     data.dist = mapTunnels:getApproxFleetTunnelDist(o.n, o.target) + mapTunnels:getSimplifiedTunnelDist(o.target, target.n)
@@ -88,7 +103,7 @@ function _module_init()
         local owned = target.owner == capturingUser.n
         local isNeutral = target.neutral
 
-        local neutralCapturingSource
+        local neutralCapturingSources = {}
         -- can be used to count "stolen" prod from enemy target, or gained prod for neutral even if recaptured by enemy.
         local friendlyProdFromTarget = 0
         local newReservations = {}
@@ -105,17 +120,25 @@ function _module_init()
             -- TODO: if this production will allow the planet to capture before another planet arrives, suppress sending until planet produces enough to capture.
             shipDiff = shipDiff + game_utils.prodToShipsPerSec(netProdInRadius) * timeDiff
             if data.source.is_planet then
-                -- if the planet is completely unreserved or is not fully reserved, we can use its production
-                if not reservations[data.source.n] or reservations[data.source.n] < data.source.ships then 
+                -- if the planet is completely unreserved or is not fully reserved, we can use its production (TODO: this underestimates the amount of production we can gain)
+                -- if not reservations[data.source.n] or reservations[data.source.n] < data.source.ships then 
                     netProdInRadius = netProdInRadius + data.source.production * common_utils.boolToSign(isFriendly)
-                end
+                -- end
             end
             -- add source's ships if not already reserved
             local contribution = data.source.ships
+            -- if redirects are not allowed and fleet will land on neutral OTHER than the target, subtract fleet target's ships from contribution 
+            if not allowRedirects and data.source.is_fleet then 
+                local fleetTarget = map._items[data.source.target]
+                if fleetTarget.n ~= target.n and fleetTarget.neutral then
+                    -- TODO: This isn't quite right... if multiple fleets attacking same target, the contribution reduction is at most the target's cost
+                    contribution = math.max(0, contribution - fleetTarget.ships)
+                end
+            end
             if reservations[data.source.n] then 
                 assert.is_true(isFriendly)
 
-                contribution = contribution - reservations[data.source.n]
+                contribution = math.max(0, contribution - reservations[data.source.n])
             end
             if owned then
                 friendlyProdFromTarget = friendlyProdFromTarget + game_utils.prodToShipsPerSec(target.production) * timeDiff
@@ -125,7 +148,10 @@ function _module_init()
             -- if target is neutral, can we capture it yet?
             -- note: The enemy doesn't ever capture. It hovers nearby and lands the moment we land.
             if isNeutral then
-                if shipDiff > target.ships then 
+                if isFriendly then 
+                    table.insert(neutralCapturingSources, data.source)
+                end
+                if math.floor(shipDiff) > target.ships then 
                     assert.is_true(isFriendly)
 
                     shipDiff = shipDiff - target.ships 
@@ -133,7 +159,6 @@ function _module_init()
                     owned = true
                     isNeutral = false
 
-                    neutralCapturingSource = data.source
                     -- overcapture by "shipDiff" amount
                     local capturingSourceShipsNeeded = contribution - shipDiff
                     -- TODO: allowRedirects not really compatible with partial reservation of fleets? check if fleet is already headed to planet
@@ -154,7 +179,7 @@ function _module_init()
             end
         end
 
-        return owned, shipDiff, friendlyProdFromTarget, neutralCapturingSource, newReservations
+        return owned, shipDiff, friendlyProdFromTarget, neutralCapturingSources, newReservations
     end
 
     return MapFuture

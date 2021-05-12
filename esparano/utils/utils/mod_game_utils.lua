@@ -41,8 +41,9 @@ function _game_utils_init()
     -- increments of 5%, max 100%.
     -- TODO: if number of ships sent is < 1, no ships will be sent!
     function game_utils.percentToUse(planet, ships)
-        if planet.ships == 0 then return 100 end
-        local pct = math.ceil((ships + 1) / planet.ships * 100 / 5) * 5
+        local available = math.floor(planet.ships)
+        if available == 0 then return 100 end
+        local pct = math.ceil((ships + 1) / available * 100 / 5) * 5
         return common_utils.clamp(pct, 5, 100)
     end
 

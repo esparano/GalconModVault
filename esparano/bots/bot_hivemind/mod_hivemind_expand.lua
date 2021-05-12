@@ -27,7 +27,6 @@ function _m_init()
         end
 
         instance.plannedCapturesData = {}
-        instance.reservations = {}
 
         return instance
     end
@@ -51,7 +50,7 @@ function _m_init()
         -- target was already captured
         if not target.neutral then return true end
 
-        local fullAttackData = getFullAttackData(map, mapTunnels, target, botUser, self.reservations)
+        local fullAttackData = getFullAttackData(map, mapTunnels, target, botUser)
 
         -- abandon plan if no longer viable
         if not self:isFullAttackViable(map, mapTunnels, mapFuture, botUser, fullAttackData) then 
@@ -61,11 +60,7 @@ function _m_init()
 
         mapTunnels:setTunnelable(target)
 
-        -- update reservations
-        for k,v in pairs(fullAttackData.newReservations) do 
-            self.reservations[k] = self.reservations[k] or 0
-            self.reservations[k] = self.reservations[k] + v
-        end
+        mapFuture:updateReservations(fullAttackData.newReservations)
 
         return false, fullAttackData
     end
@@ -204,16 +199,21 @@ function _m_init()
 
         -- if we reserve ships to attack the neutral planet, will we lose a front planet in a full attack?
         local friendlyPlannedCapturesSet = Set.new({neutralAttackData.target.n})
-        local frontPlanets = getFrontPlanets(map, mapTunnels, botUser, friendlyPlannedCapturesSet)
-        -- print("#frointplanets .. " .. #frontPlanets)
+        local frontPlanets = mapTunnels:getFrontPlanets(botUser, friendlyPlannedCapturesSet)
+
         for i,p in ipairs(frontPlanets) do
-            local frontAttackData = getFullAttackData(map, mapTunnels, p, botUser, totalReservations)
-            -- TODO: this could be overly cautious. Sometimes you still want to expand despite not owning a planet at the end...
-            if not frontAttackData.ownsPlanetAtEnd then 
-                local neutralDesc = getNeutralDesc(map, mapTunnels, botUser, neutralAttackData.target)
-                -- print("planet " .. p.ships .. " is vulnerable by " .. neutralAttackData.shipDiff .. " if expanding to " .. neutralDesc)
-                return false 
-            end 
+            -- if the neutral IS a front planet, don't full-attack-test it a second time.
+            if p.n ~= neutralAttackData.target.n then 
+                local frontAttackData = getFullAttackData(map, mapTunnels, p, botUser, totalReservations)
+                -- TODO: this could be overly cautious. Sometimes you still want to expand despite not owning a planet at the end, \
+                -- for example, if the prod gained by the neutral is greater than the sum of lost prod from lost front planets.
+                if not frontAttackData.ownsPlanetAtEnd then 
+                    local neutralDesc = getNeutralDesc(map, mapTunnels, botUser, neutralAttackData.target)
+                    local frontDesc = getNeutralDesc(map, mapTunnels, botUser, frontAttackData.target)
+                    print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
+                    return false
+                end 
+            end
         end 
 
         return true
@@ -229,30 +229,6 @@ function _m_init()
             capturingSources = capturingSources,
             newReservations = newReservations,
         }
-    end
-
-    -- a "front" planet is any "owned" (or planned-to-be-captured) planet that does not need to tunnel to attack its closest enemy planet
-    -- will return empty list if there are no enemy planets
-    function getFrontPlanets(map, mapTunnels, user, friendlyPlannedCapturesSet, enemyPlannedCapturesSet)
-        friendlyPlannedCapturesSet = friendlyPlannedCapturesSet or Set.new()
-        enemyPlannedCapturesSet = enemyPlannedCapturesSet or Set.new()
-        local friendlyPlanets = common_utils.filter(map:getPlanetList(), 
-            function (p) return p.owner == user.n or friendlyPlannedCapturesSet:contains(p.n) end
-        )
-        local enemyUser = map:getEnemyUser(user.n)
-        local enemyPlanets = common_utils.filter(map:getPlanetList(), 
-            function (p) return p.owner == enemyUser.n or enemyPlannedCapturesSet:contains(p.n) end
-        )
-        return common_utils.filter(friendlyPlanets, 
-            function (source)
-                local closestEnemyPlanet = common_utils.find(enemyPlanets,
-                    function (target) 
-                        return - mapTunnels:getSimplifiedTunnelDist(source.n, target.n) 
-                    end
-                )
-                return closestEnemyPlanet ~= nil and mapTunnels:getTunnelAlias(source.n, closestEnemyPlanet.n).owner ~= user.n
-            end
-        )
     end
 
     function getNeutralDesc(map, mapTunnels, botUser, neutral)
