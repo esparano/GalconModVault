@@ -18,12 +18,21 @@ function _m_init()
         return instance
     end
 
+    -- TODO: cross-front actions as well as to-enemy-center-of-mass actions.
     function FeedFrontMind:suggestActions(map, mapTunnels, mapFuture, botUser)
-        return {}
+        local candidates = {}
+
+        candidates = common_utils.combineLists(candidates, self:suggestSimpleFeedActions(map, mapTunnels, mapFuture, botUser))
+
+        return candidates
     end
 
     function FeedFrontMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
        
+    end
+
+    function FeedFrontMind:suggestSimpleFeedActions(map, mapTunnels, mapFuture, botUser, action)
+       return {}
     end
 
     return FeedFrontMind

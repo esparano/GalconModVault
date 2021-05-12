@@ -2,6 +2,7 @@ require("mod_hivemind_action")
 --[[
 -does not grade moves
 -explosively attack nearest planets (clusters based?) full-on if swap detected
+-the goal is attrition of enemy ships as well as capturing prod....
 ]]
 function _m_init()
     local SwapMind = {}

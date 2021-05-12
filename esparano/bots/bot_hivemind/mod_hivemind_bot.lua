@@ -18,8 +18,10 @@ require("mod_hivemind_float")
 require("mod_hivemind_mid_rush")
 require("mod_hivemind_overcapture")
 require("mod_hivemind_pass")
+require("mod_hivemind_pressure")
 require("mod_hivemind_redirect_trick")
 require("mod_hivemind_rush")
+require("mod_hivemind_surrender")
 require("mod_hivemind_swap")
 require("mod_hivemind_timer_trick")
 
@@ -41,6 +43,7 @@ function getOptsForMind(mindName, opts)
             mindOpts[optKey] = v
         end
     end
+    mindOpts.settings = opts.settings
     return mindOpts
 end
 
@@ -62,8 +65,10 @@ function initMinds(opts)
     table.insert(minds, MidRushMind.new(getOptsForMind("midrush", opts)))
     table.insert(minds, OvercaptureMind.new(getOptsForMind("overcapture", opts)))
     table.insert(minds, PassMind.new(getOptsForMind("pass", opts)))
+    table.insert(minds, PressureMind.new(getOptsForMind("pressure", opts)))
     table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", opts)))
     table.insert(minds, RushMind.new(getOptsForMind("rush", opts)))
+    table.insert(minds, SurrenderMind.new(getOptsForMind("surrender", opts)))
     table.insert(minds, SwapMind.new(getOptsForMind("swap", opts)))
     table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", opts)))
     return minds
@@ -107,6 +112,9 @@ function bot_hivemind(params, sb_stats)
             expand_targetCostWeight = 1,
             expand_ownedPlanetMaxShipLoss = 1,
             expand_negativeRoiReductionFactor = 1
+        },
+        settings = {
+            multiSelect = true,
         }
         
     }
@@ -199,7 +207,10 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
         gradeAction(action, minds)
     end
 
-    candidates = getCombinedActions(candidates, minds)
+    -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
+    -- Instead, the highest-priority move should track and apply its reservations and only then determine if the secondary action is compatible.
+    -- TODO: THe way that moves with different percentages get combined, it may break "reservations" slightly.
+    -- candidates = getCombinedActions(candidates, minds, opts.multiSelect)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
     table.sort(candidates, function (a, b) 
@@ -225,7 +236,7 @@ function gradeAction(action, minds)
     end
 end
 
-function getCombinedActions(actions, minds)
+function getCombinedActions(actions, minds, multiselect)
     local allActions = common_utils.shallow_copy(actions)
     local newActions = common_utils.shallow_copy(actions) 
 
@@ -245,7 +256,7 @@ function getCombinedActions(actions, minds)
                 if i < j or iterations > 1 then 
                     -- Combined actions may not have any base actions in common.
                     if comboActionSourceMap[a1]:intersection(comboActionSourceMap[a2]):size() == 0 then 
-                        local a = combineActions(a1, a2)
+                        local a = combineActions(a1, a2, multiselect)
                         if a then
                             comboActionSourceMap[a] = comboActionSourceMap[a1]:union(comboActionSourceMap[a2])
                             gradeAction(a, minds)
@@ -268,9 +279,11 @@ function getCombinedActions(actions, minds)
 end
 
 -- TODO: provide bonus for moves that move a lot of ships? (large movements rather than a few small ones?? for efficiency?)
--- 
+-- TODO: combine actions for expand mind and deal with "waiting" a bit
+-- TODO: which mind should be responsible for not expanding if ANY "front" planet could be rushed by enemy? Try execute plan, reserving ships for expansion, AND try all out attack?
+-- see if they are still able to defend? attack against all front planets?
 
-function combineActions(a1, a2)
+function combineActions(a1, a2, multiSelect)
     -- incompatible actions
     if a1.actionType ~= a2.actionType then return end
     if a1.target.n ~= a2.target.n then return end
@@ -280,7 +293,7 @@ function combineActions(a1, a2)
     return combinedAction
 end
 
-function doCombineActions(a1, a2)
+function doCombineActions(a1, a2, multiSelect)
     local priority = a1.initialPriority + a2.initialPriority
     local desc = "COMBO{".. a1.description .. "|" .. a2.description .. "}"
 
@@ -288,29 +301,30 @@ function doCombineActions(a1, a2)
     a1SourceIdSet:addAll(common_utils.map(a1.sources, function (s) return s.n end))
     local a2SourceIdSet = Set.new()
     a2SourceIdSet:addAll(common_utils.map(a2.sources, function (s) return s.n end))
-    local sourcesEquivalent = a1SourceIdSet:symmetricDifference(a2SourceIdSet):size() == 0 
-    local sourcesAreDisjoint = a1SourceIdSet:intersection(a2SourceIdSet):size() == 0 
+    local sourcesEquivalent = a1SourceIdSet:symmetricDifference(a2SourceIdSet):size() == 0
+    local sourcesAreDisjoint = a1SourceIdSet:intersection(a2SourceIdSet):size() == 0
 
     local combinedPlans = {}
     combinedPlans = common_utils.combineLists(combinedPlans, a1.plans)
     combinedPlans = common_utils.combineLists(combinedPlans, a2.plans)
 
+    -- TODO: should not combine two new plans to help solve expansion bug? can combine new plan and old plan though or 2 old plans
     if a1.actionType == ACTION_TYPE_REDIRECT then
         -- TODO: for now, only combine if sources are not intersecting at all.
         if sourcesEquivalent then
             local combinedSources = common_utils.combineLists(a1.sources, a2.sources)
             return Action.newRedirect(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target)
         end
-    elseif a1.actionType == ACTION_TYPE_SEND then 
+    elseif a1.actionType == ACTION_TYPE_SEND then
         -- combine from same sources, adding percentages
-        if sourcesEquivalent then 
+        if sourcesEquivalent then
             -- TODO: combining percents may not be perfectly efficient because ceil(a) + ceil(b) >= ceil(a + b)
-            local percent = a1.percent + a2.percent 
-            if percent > 100 then return end 
+            local percent = a1.percent + a2.percent
+            if percent > 100 then return end
 
             return Action.newSend(priority, a1.mind, desc, combinedPlans, a1.sources, a1.target, percent)
         -- TODO: for now, only combine if sources are completely disjoint
-        elseif sourcesAreDisjoint then
+        elseif sourcesAreDisjoint and multiSelect then
             -- if percents are too different, don't try to combine
             if math.abs(a1.percent - a2.percent) > 40 then return end
 

@@ -126,13 +126,15 @@ function bots_register(name, loop, options)
 end
 
 function register_bots()
-    bots_register("Dev", "bots_1",
+    bots_register("A-Dev", "bots_1",
     {
         debug = DEBUG
     })
-    bots_register("Compare", "bots_2")
+    bots_register("B-Compare", "bots_2")
     -- bots_register("simple", "bots_simple")
 end
+
+register_bots()
 
 ----------------------------------------------------------------------------
 -- Below this is the code for running the bot war
@@ -170,7 +172,7 @@ function init()
         total = 0,
         timeout = 300.0,
         players = 2, -- max number of players in a round
-        speed = 0.4, -- more time per loop, 15 max (1/4 second)
+        speed = 2, -- more time per loop, 15 max (1/4 second)
         ticks = 1, -- more loops per frame
         -- speed = 12, -- more time per loop, 15 max (1/4 second)
         -- ticks = 40, -- more loops per frame
@@ -178,6 +180,8 @@ function init()
         delay = 0.25,
         -- mapSeed = 26,
         mapSeed = 26,
+        minNeutralProd = 15,
+        maxNeutralShips = 50
     }
     DEBUG = {
         drawFriendlyFrontPlanets = true,
@@ -187,7 +191,6 @@ function init()
         drawFriendlyExpansionPlan = true,
         drawEnemyExpansionPlan = true,
     }
-    register_bots()
 
     reset(false)
 end
@@ -266,10 +269,10 @@ function next_game()
     for i = 1, n / 2 do
         local x = math.random(pad,sw-pad)
         local y = math.random(pad,sh-pad)
-        local s = math.random(15,100)
-        local p = math.random(0,50)
-        g2.new_planet(u0, x, y, s, p);
-        g2.new_planet(u0, sw - x, sh - y, s, p);
+        local p = math.random(GAME.minNeutralProd,100)
+        local s = math.random(0,GAME.maxNeutralShips)
+        g2.new_planet(u0, x, y, p, s);
+        g2.new_planet(u0, sw - x, sh - y, p, s);
     end
 
     local a = math.random(0, 360)

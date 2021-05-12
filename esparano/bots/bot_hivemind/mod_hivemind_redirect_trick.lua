@@ -13,7 +13,7 @@ function _m_init()
         end
 
         instance.name = "RedirectTrick"
-
+        
         return instance
     end
 
