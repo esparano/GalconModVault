@@ -19,12 +19,11 @@ function _m_init()
         for k, v in pairs(ExpandMind) do
             instance[k] = v
         end
-
-        instance.name = "Expand"
-
         for k,v in pairs(params) do 
             instance[k] = v
         end
+
+        instance.name = "Expand"
 
         instance.plannedCapturesData = {}
 
@@ -46,6 +45,8 @@ function _m_init()
     -- and if not satisfied yet, returns fullAttackData
     function ExpandMind:updatePlannedCapture(map, mapTunnels, mapFuture, botUser, targetN)
         local target = map._items[targetN]
+
+        assert.is_true(target.is_planet, "planned expansion target was not a planet!!")
 
         -- target was already captured
         if not target.neutral then return true end
@@ -92,31 +93,17 @@ function _m_init()
         -- only send if the neutral won't already be captured by incoming fleets
         safeNeutralData = common_utils.filter(safeNeutralData, function (data) return getMinShipsToCapture(map, mapFuture, botUser, data.target) >= 0 end)  
         
-        for i,data in ipairs(safeNeutralData) do
-            local isPreplanned = common_utils.findFirst(self.plannedCapturesData, function (p) return p == data end)
-            local planContinuityBonus = isPreplanned and 5 * self.planContinuityBonus or 0
-            
-            -- introduce various nonlinearities
-            local captureEase = common_utils.clamp(self.fullAttackDiffWeight * data.shipDiff + 10 - 10 * self.fullAttackDiffIntercept, 
-                self.fullAttackDiffMin * -10, self.fullAttackDiffMax * 10)
-            local gainBonus = (data.friendlyProdFromTarget * self.gainedShipsWeight - 2 * data.target.ships * self.targetCostWeight)
-            -- if planet is owned at the end, add production, otherwise, only add ships gained
-            if data.ownsPlanetAtEnd then
-                if gainBonus < 0 then 
-                    gainBonus = math.max(10 - 10 * self.ownedPlanetMaxShipLoss, gainBonus * self.negativeRoiReductionFactor * 0.3)
-                end
-                gainBonus = gainBonus + self.fullAttackProdWeight * data.target.production / 3
-            else
-                gainBonus = (data.friendlyProdFromTarget * self.gainedShipsWeight - 2 * data.target.ships * self.targetCostWeight) + data.target.production / 10
-            end
+        for i,data in ipairs(safeNeutralData) do         
+            local initialPriority = self:getFullAttackSafeCapturePriority(data)
 
-            local initialPriority = self.fullAttackCaptureEase * captureEase / 10 + planContinuityBonus + gainBonus
-            initialPriority = initialPriority * self.fullAttackOverallWeight
+            local isPreplanned = common_utils.findFirst(self.plannedCapturesData, function (p) return p == data end)
 
             local capturingSource = data.capturingSources[#data.capturingSources]
             if capturingSource.is_planet then
+                -- TODO: This just gets the last friendly planet before capture, even if we need to wait for more production to help capture. 
+                -- Instead, we should return whether or not the attack needs to wait for prod or whether an actual planet can send some ships now  
                 local capturingSourceShipsNeeded = data.newReservations[capturingSource.n]
-                if capturingSourceShipsNeeded >= 0 then 
+                if capturingSourceShipsNeeded > 0 then 
                     
                     local percent = game_utils.percentToUse(capturingSource, capturingSourceShipsNeeded)
                     local to = mapTunnels:getTunnelAlias(capturingSource.n, data.target.n)
@@ -133,23 +120,33 @@ function _m_init()
                         end
                     end
 
-                    -- add other sources to the plan if they have the same target and can afford the sending (without reservations etc.)
-
-                    local plan
-                    -- if plan already exists, no need to add a second plan to capture the same neutral.
-                    if not isPreplanned then 
-                        plan = self:constructPlan(data.target)
+                    -- figure out how many ships will actually be sent (planets can't send if < 1 full ship)
+                    local total = 0
+                    for i,source in ipairs(sources) do
+                        local amt = source.ships * percent / 100
+                        if amt < 1 then amt = 0 end 
+                        total = total + amt
                     end
-                    local desc = isPreplanned and "Planned@" or "New@"
-                    local neutralDesc = getNeutralDesc(map, mapTunnels, botUser, data.target)
 
-                    -- print("sending " .. percent .. " to " .. to.ships .. " which needs " .. capturingSourceShipsNeeded)
-                    -- for i,source in ipairs(sources) do 
-                    --     print("source " .. source.ships)
-                    -- end
+                    if total >= 1 then 
+                        -- add other sources to the plan if they have the same target and can afford the sending (without reservations etc.)
 
-                    local action = Action.newSend(initialPriority, self, desc .. neutralDesc, {plan}, sources, to, percent)
-                    table.insert(candidates, action)
+                        local plan
+                        -- if plan already exists, no need to add a second plan to capture the same neutral.
+                        if not isPreplanned then 
+                            plan = self:constructPlan(data.target)
+                        end
+                        local desc = isPreplanned and "Planned@" or "New@"
+                        local neutralDesc = getNeutralDesc(map, mapTunnels, botUser, data.target)
+
+                        -- print("sending " .. percent .. " to " .. to.ships .. " which needs " .. capturingSourceShipsNeeded)
+                        -- for i,source in ipairs(sources) do 
+                        --     print("source " .. source.ships)
+                        -- end
+
+                        local action = Action.newSend(initialPriority, self, desc .. neutralDesc, {plan}, sources, to, percent)
+                        table.insert(candidates, action)
+                    end
                 end
             else
                 -- TODO: how to redirect fleets to help capture??
@@ -160,6 +157,30 @@ function _m_init()
         end
 
         return candidates
+    end
+
+    -- introduce various nonlinearities 
+    function ExpandMind:getFullAttackSafeCapturePriority(data)
+
+        local captureEase = common_utils.clamp(self.fullAttackDiffWeight * data.shipDiff + 10 - 10 * self.fullAttackDiffIntercept, 
+        self.fullAttackDiffMin * -10, self.fullAttackDiffMax * 10)
+        local gainBonus = (data.friendlyProdFromTarget * self.gainedShipsWeight - 2 * data.target.ships * self.targetCostWeight)
+        -- if planet is owned at the end, add production, otherwise, only add ships gained
+        if data.ownsPlanetAtEnd then
+            if gainBonus < 0 then 
+                gainBonus = math.max(10 - 10 * self.ownedPlanetMaxShipLoss, gainBonus * self.negativeRoiReductionFactor * 0.3)
+            end
+            gainBonus = gainBonus + self.fullAttackProdWeight * data.target.production / 3
+        else
+            gainBonus = (data.friendlyProdFromTarget * self.gainedShipsWeight - 2 * data.target.ships * self.targetCostWeight) + data.target.production / 10
+        end
+
+        local isPreplanned = common_utils.findFirst(self.plannedCapturesData, function (p) return p == data end)
+        local planContinuityBonus = isPreplanned and 15 * self.planContinuityBonus or 0
+
+        local initialPriority = self.fullAttackCaptureEase * captureEase / 10 + planContinuityBonus + gainBonus
+        initialPriority = initialPriority * self.fullAttackOverallWeight
+        return initialPriority
     end
 
     function ExpandMind:constructPlan(target)
@@ -210,7 +231,7 @@ function _m_init()
                 if not frontAttackData.ownsPlanetAtEnd then 
                     local neutralDesc = getNeutralDesc(map, mapTunnels, botUser, neutralAttackData.target)
                     local frontDesc = getNeutralDesc(map, mapTunnels, botUser, frontAttackData.target)
-                    print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
+                    -- print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
                     return false
                 end 
             end

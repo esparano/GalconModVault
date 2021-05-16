@@ -111,7 +111,10 @@ function _module_init()
         for _,data in ipairs(sourceData) do
             local isFriendly = data.source.owner == capturingUser.n
 
+            assert.is_true(data.dist >= 0, "distance of source in full-attack was negative!")
+
             local diff = data.dist - lastDist
+            assert.is_true(diff >= 0, "distance of source in full-attack was not sorted properly!")
             lastDist = data.dist
             local timeDiff = game_utils.distToTravelTime(diff)
 
@@ -136,7 +139,7 @@ function _module_init()
                 end
             end
             if reservations[data.source.n] then 
-                assert.is_true(isFriendly)
+                assert.is_true(isFriendly, "non-friendly planet has reservations")
 
                 contribution = math.max(0, contribution - reservations[data.source.n])
             end
@@ -148,25 +151,27 @@ function _module_init()
             -- if target is neutral, can we capture it yet?
             -- note: The enemy doesn't ever capture. It hovers nearby and lands the moment we land.
             if isNeutral then
-                if isFriendly then 
-                    table.insert(neutralCapturingSources, data.source)
-                end
-                if math.floor(shipDiff) > target.ships then 
-                    assert.is_true(isFriendly)
-
+                -- NOTE: this may happen even if the current source is ENEMY because + friendly prod - enemy source ships may still be > target.ships.
+                if shipDiff > target.ships then 
                     shipDiff = shipDiff - target.ships 
                     netProdInRadius = netProdInRadius + target.production
                     owned = true
                     isNeutral = false
 
-                    -- overcapture by "shipDiff" amount
+                    -- overcapture by "shipDiff" amount; contribution may be < shipDiff if high friendly prod outweighs enemy source's ships
                     local capturingSourceShipsNeeded = contribution - shipDiff
+
                     -- TODO: allowRedirects not really compatible with partial reservation of fleets? check if fleet is already headed to planet
-                    newReservations[data.source.n] = capturingSourceShipsNeeded
+                    if isFriendly and capturingSourceShipsNeeded >= 0 then 
+                        capturingSourceShipsNeeded = math.max(0, capturingSourceShipsNeeded)
+                        newReservations[data.source.n] = capturingSourceShipsNeeded
+                        table.insert(neutralCapturingSources, data.source)
+                    end
                 else
                     -- reserve the entire source towards this plan
                     if isFriendly then
                         newReservations[data.source.n] = contribution
+                        table.insert(neutralCapturingSources, data.source)
                     end
                 end
             -- has planet changed hands? 

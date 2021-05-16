@@ -113,7 +113,7 @@ end
 ----------------------------------------------------------------------------
 -- REGISTER BOTS -----------------------------------------------------------
 ----------------------------------------------------------------------------
-global("BOTS")
+global("BOTS") 
 BOTS = {}
 
 -- "bots_register" - Register your bot using this function
@@ -126,11 +126,11 @@ function bots_register(name, loop, options)
 end
 
 function register_bots()
-    bots_register("A-Dev", "bots_1",
+    bots_register("Compare", "bots_2")
+    bots_register("Dev", "bots_1",
     {
         debug = DEBUG
     })
-    bots_register("B-Compare", "bots_2")
     -- bots_register("simple", "bots_simple")
 end
 
@@ -172,13 +172,14 @@ function init()
         total = 0,
         timeout = 300.0,
         players = 2, -- max number of players in a round
-        speed = 2, -- more time per loop, 15 max (1/4 second)
+        speed = 1, -- more time per loop, 15 max (1/4 second)
         ticks = 1, -- more loops per frame
         -- speed = 12, -- more time per loop, 15 max (1/4 second)
         -- ticks = 40, -- more loops per frame
         live = false,
         delay = 0.25,
         -- mapSeed = 26,
+        -- mapSeed = 559, -- streaming slowly
         mapSeed = 26,
         minNeutralProd = 15,
         maxNeutralShips = 50

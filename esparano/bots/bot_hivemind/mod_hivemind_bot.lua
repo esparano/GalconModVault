@@ -52,37 +52,26 @@ function initMinds(opts)
      -- sets positive RoI planets as tunnelable. Should analyze earlier than most other minds.
     table.insert(minds, ExpandMind.new(getOptsForMind("expand", opts)))
     table.insert(minds, AttackMind.new(getOptsForMind("attack", opts)))
-    table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", opts)))
-    table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", opts)))
-    table.insert(minds, ClusterControlMind.new(getOptsForMind("clustercontrol", opts)))
-    table.insert(minds, DefendRushMind.new(getOptsForMind("defendrush", opts)))
+    -- table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", opts)))
+    -- table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", opts)))
+    -- table.insert(minds, ClusterControlMind.new(getOptsForMind("clustercontrol", opts)))
+    -- table.insert(minds, DefendRushMind.new(getOptsForMind("defendrush", opts)))
     table.insert(minds, DefendMind.new(getOptsForMind("defend", opts)))
-    table.insert(minds, EvenDistributionMind.new(getOptsForMind("evendistribution", opts)))
+    -- table.insert(minds, EvenDistributionMind.new(getOptsForMind("evendistribution", opts)))
     table.insert(minds, ExploitEmptyMind.new(getOptsForMind("exploitempty", opts)))
     table.insert(minds, FeedFrontMind.new(getOptsForMind("feedfront", opts)))
-    table.insert(minds, FleeTrickMind.new(getOptsForMind("fleetrick", opts)))
+    -- table.insert(minds, FleeTrickMind.new(getOptsForMind("fleetrick", opts)))
     table.insert(minds, FloatMind.new(getOptsForMind("float", opts)))
     table.insert(minds, MidRushMind.new(getOptsForMind("midrush", opts)))
-    table.insert(minds, OvercaptureMind.new(getOptsForMind("overcapture", opts)))
+    -- table.insert(minds, OvercaptureMind.new(getOptsForMind("overcapture", opts)))
     table.insert(minds, PassMind.new(getOptsForMind("pass", opts)))
-    table.insert(minds, PressureMind.new(getOptsForMind("pressure", opts)))
-    table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", opts)))
+    -- table.insert(minds, PressureMind.new(getOptsForMind("pressure", opts)))
+    -- table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", opts)))
     table.insert(minds, RushMind.new(getOptsForMind("rush", opts)))
-    table.insert(minds, SurrenderMind.new(getOptsForMind("surrender", opts)))
-    table.insert(minds, SwapMind.new(getOptsForMind("swap", opts)))
-    table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", opts)))
+    -- table.insert(minds, SurrenderMind.new(getOptsForMind("surrender", opts)))
+    -- table.insert(minds, SwapMind.new(getOptsForMind("swap", opts)))
+    -- table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", opts)))
     return minds
-end
-
-function getHome(map, mapTunnels, user)
-    return common_utils.find(map:getPlanetList(user.n), function(p) return p.production end)
-end
-
-function getHomesDistance(map, mapTunnels)
-    local users = map:getUserList(false)
-    local h1 = getHome(map, mapTunnels, users[1])
-    local h2 = getHome(map, mapTunnels, users[2])
-    return mapTunnels:getSimplifiedTunnelDist(h1.n, h2.n)
 end
 
 function bot_hivemind(params, sb_stats)
@@ -111,7 +100,10 @@ function bot_hivemind(params, sb_stats)
             expand_gainedShipsWeight = 1,
             expand_targetCostWeight = 1,
             expand_ownedPlanetMaxShipLoss = 1,
-            expand_negativeRoiReductionFactor = 1
+            expand_negativeRoiReductionFactor = 1,
+            feedFront_basicFeedFrontSendAmountWeight = 1,
+            feedFront_basicFeedFrontDistWeight = 1,
+            feedFront_basicFeedFrontOverallWeight = 1,
         },
         settings = {
             multiSelect = true,
@@ -153,7 +145,8 @@ function bot_hivemind(params, sb_stats)
     end
 
     local move = getMove(map, mapTunnels, mapFuture, botUser, OPTS, MEM)
-    print("CHOOSING MOVE: " .. move:getSummary())
+    print("CHOOSE: " .. move:getSummary())
+    print("------------------------------------------------")
 
     -- DEBUG DRAWING
     -- if OPTS.debug.drawFriendlyFrontPlanets then 
@@ -186,8 +179,8 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     local minds = initMinds(opts);
 
     -- update minds' state with chosen plans and update saved plans.
-    for _,mind in ipairs(minds) do 
-        for _,plan in ipairs(mem.plans) do 
+    for _,mind in ipairs(minds) do
+        for _,plan in ipairs(mem.plans) do
             if mind.name == plan.mindName then
                 mind:processPlan(map, mapTunnels, mapFuture, botUser, plan)
             end
@@ -198,12 +191,12 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     local candidates = {}
     for _,mind in ipairs(minds) do 
         local actions = mind:suggestActions(map, mapTunnels, mapFuture, botUser)
-        for _,action in ipairs(actions) do 
+        for _,action in ipairs(actions) do
             table.insert(candidates, action)
         end
     end
 
-    for _,action in ipairs(candidates) do 
+    for _,action in ipairs(candidates) do
         gradeAction(action, minds)
     end
 
@@ -212,7 +205,7 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
     -- Instead, the highest-priority move should track and apply its reservations and only then determine if the secondary action is compatible.
     -- TODO: THe way that moves with different percentages get combined, it may break "reservations" slightly.
-    -- candidates = getCombinedActions(candidates, minds, opts.multiSelect)
+    candidates = getCombinedActions(candidates, minds, opts.multiSelect)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
     table.sort(candidates, function (a, b) 
@@ -250,7 +243,7 @@ function getCombinedActions(actions, minds, multiselect)
 
     local iterations = 1
     local MAX_ITERATIONS = 4
-    while #newActions > 0 and iterations < MAX_ITERATIONS do
+    while #newActions > 0 and iterations <= MAX_ITERATIONS do
         local nextNewActions = {}
 
         for i,a1 in ipairs(allActions) do
@@ -276,9 +269,8 @@ function getCombinedActions(actions, minds, multiselect)
 
         iterations = iterations + 1
     end
-    if iterations > MAX_ITERATIONS then
-        print("WARNING: TOOK MORE THAN " .. MAX_ITERATIONS .. " to combine actions")
-    end
+    assert.is_true(iterations <= MAX_ITERATIONS, "WARNING: TOOK MORE THAN " .. MAX_ITERATIONS .. " to combine actions")
+
     return allActions
 end
 
@@ -291,7 +283,7 @@ function combineActions(a1, a2, multiSelect)
     -- incompatible actions
     if a1.actionType ~= a2.actionType then return end
     if a1.target.n ~= a2.target.n then return end
-    -- TODO: how to combine actions from different minds??
+    -- TODO: how to combine actions from different minds?? add priorities and regrade for all minds except originating minds?
     if a1.mind.name ~= a2.mind.name then return end
     -- TODO: for now, only combine new plans with old plans or 2 old plans, etc.
     if #a1.plans > 0 and #a2.plans > 0 then return end
@@ -314,9 +306,8 @@ function doCombineActions(a1, a2, multiSelect)
     combinedPlans = common_utils.combineLists(combinedPlans, a1.plans)
     combinedPlans = common_utils.combineLists(combinedPlans, a2.plans)
 
-    -- TODO: should not combine two new plans to help solve expansion bug? can combine new plan and old plan though or 2 old plans
     if a1.actionType == ACTION_TYPE_REDIRECT then
-        -- TODO: for now, only combine if sources are not intersecting at all.
+        -- only combine if sources are not intersecting at all. This is a minor simplifying assumption.
         if sourcesEquivalent then
             local combinedSources = common_utils.combineLists(a1.sources, a2.sources)
             return Action.newRedirect(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target)
@@ -329,8 +320,7 @@ function doCombineActions(a1, a2, multiSelect)
             if percent > 100 then return end
 
             return Action.newSend(priority, a1.mind, desc, combinedPlans, a1.sources, a1.target, percent)
-        -- TODO: for now, only combine if sources are completely disjoint
-        elseif sourcesAreDisjoint and multiSelect then
+        elseif sourcesAreDisjoint and multiSelect then 
             -- if percents are too different, don't try to combine
             if math.abs(a1.percent - a2.percent) > 40 then return end
 
@@ -351,10 +341,10 @@ function doCombineActions(a1, a2, multiSelect)
             end
             for i,source in ipairs(a2.sources) do 
                 shipsToSend = shipsToSend + a2.percent / 100 * source.ships
-                totalAvailable = totalAvailable + source.ships
+                totalAvailable = totalAvailable + source.ships 
             end
             local combinedPercent = math.ceil(shipsToSend / totalAvailable * 100 / 5) * 5
-            assert.is_true(combinedPercent >= 5 and combinedPercent <= 100)
+            assert.is_true(combinedPercent >= 5 and combinedPercent <= 100, "combined percents was not in range")
 
             return Action.newSend(priority, a1.mind, desc, combinedPlans, combinedSources, a1.target, combinedPercent)
         end
