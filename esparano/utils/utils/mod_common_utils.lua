@@ -57,6 +57,7 @@ function _common_utils_init()
         if type(o) == 'table' then
             local s = '{ '
             for k,v in pairs(o) do
+                if type(k) == 'table' then k = tostring(k) end
                 if type(v) == 'function' then 
                     s = s .. k .. '(),'
                 else
