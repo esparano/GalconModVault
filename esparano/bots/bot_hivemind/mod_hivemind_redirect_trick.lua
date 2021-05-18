@@ -17,11 +17,11 @@ function _m_init()
         return instance
     end
 
-    function RedirectTrickMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function RedirectTrickMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function RedirectTrickMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function RedirectTrickMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
 
     end
 

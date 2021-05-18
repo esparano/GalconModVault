@@ -17,11 +17,11 @@ function _m_init()
         return instance
     end
 
-    function CenterControlMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function CenterControlMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function CenterControlMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function CenterControlMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
 
     end
 

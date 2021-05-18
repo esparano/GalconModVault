@@ -152,14 +152,15 @@ function _module_init()
             -- note: The enemy doesn't ever capture. It hovers nearby and lands the moment we land.
             if isNeutral then
                 -- NOTE: this may happen even if the current source is ENEMY because + friendly prod - enemy source ships may still be > target.ships.
-                if shipDiff > target.ships then 
-                    shipDiff = shipDiff - target.ships 
+                local amountNeededToCapture = target.ships + 1
+                if shipDiff > amountNeededToCapture then 
+                    shipDiff = shipDiff - target.ships
                     netProdInRadius = netProdInRadius + target.production
                     owned = true
                     isNeutral = false
 
                     -- overcapture by "shipDiff" amount; contribution may be < shipDiff if high friendly prod outweighs enemy source's ships
-                    local capturingSourceShipsNeeded = contribution - shipDiff
+                    local capturingSourceShipsNeeded = contribution - shipDiff + 1
 
                     -- TODO: allowRedirects not really compatible with partial reservation of fleets? check if fleet is already headed to planet
                     if isFriendly and capturingSourceShipsNeeded >= 0 then 

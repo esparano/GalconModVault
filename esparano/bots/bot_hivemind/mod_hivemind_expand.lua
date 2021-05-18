@@ -1,8 +1,9 @@
-require("mod_hivemind_action")
-require("mod_hivemind_plan")
 require("mod_game_utils")
 require("mod_common_utils")
 require("mod_set")
+require("mod_hivemind_action")
+require("mod_hivemind_plan")
+require("mod_hivemind_utils")
  
 --[[
 -most complex mind, should it be broken up?
@@ -66,11 +67,14 @@ function _m_init()
         return false, fullAttackData
     end
 
-    function ExpandMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function ExpandMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         local candidates = {}
 
         -- run this just to better calculate tunnels
-        getNeutralsDataWithPositiveRoi(map, mapTunnels, botUser)
+        -- TODO: this can lead to situations where the bot sends at a planet and can't actually capture it...
+        -- TODO: this also leads to situatiosn where the bot miscounts front planets because a back planet may tunnel through a low-value neutral unplanned for capture (or enemy) instead of a 
+        -- planned front planet.
+        -- getNeutralsDataWithPositiveRoi(map, mapTunnels, botUser)
 
         candidates = common_utils.combineLists(candidates, self:suggestFullAttackSafeActions(map, mapTunnels, mapFuture, botUser))
         -- TODO: send towards "good" areas, summing prod for each branch/front planet etc.
@@ -78,7 +82,7 @@ function _m_init()
         return candidates
     end
 
-    function ExpandMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function ExpandMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
     end
 
     ----------------------------------------------------
@@ -91,7 +95,7 @@ function _m_init()
         -- plannedCaptures were already verified to be full-attack safe.
         safeNeutralData = common_utils.combineLists(safeNeutralData, self.plannedCapturesData)
         -- only send if the neutral won't already be captured by incoming fleets
-        safeNeutralData = common_utils.filter(safeNeutralData, function (data) return getMinShipsToCapture(map, mapFuture, botUser, data.target) >= 0 end)  
+        safeNeutralData = common_utils.filter(safeNeutralData, function (data) return getNetIncomingAndPresentShips(mapFuture, data.target) >= 0 end)  
         
         for i,data in ipairs(safeNeutralData) do         
             local initialPriority = self:getFullAttackSafeCapturePriority(data)
@@ -103,7 +107,7 @@ function _m_init()
                 -- TODO: This just gets the last friendly planet before capture, even if we need to wait for more production to help capture. 
                 -- Instead, we should return whether or not the attack needs to wait for prod or whether an actual planet can send some ships now  
                 local capturingSourceShipsNeeded = data.newReservations[capturingSource.n]
-                if capturingSourceShipsNeeded > 0 then 
+                if capturingSourceShipsNeeded > 0 or (capturingSourceShipsNeeded == 0 and data.target.ships == 0) then 
                     
                     local percent = game_utils.percentToUse(capturingSource, capturingSourceShipsNeeded)
                     local to = mapTunnels:getTunnelAlias(capturingSource.n, data.target.n)
@@ -123,9 +127,7 @@ function _m_init()
                     -- figure out how many ships will actually be sent (planets can't send if < 1 full ship)
                     local total = 0
                     for i,source in ipairs(sources) do
-                        local amt = source.ships * percent / 100
-                        if amt < 1 then amt = 0 end 
-                        total = total + amt
+                        total = total + getAmountSent(source, percent)
                     end
 
                     if total >= 1 then 
@@ -194,7 +196,7 @@ function _m_init()
             -- don't attack neutrals that are already planned to be captured
             not common_utils.findFirst(mind.plannedCapturesData, function (data) return data.target.n == target.n end)
             -- only send if the neutral won't already be captured by incoming fleets
-            and getMinShipsToCapture(map, mapFuture, botUser, target) >= 0
+            and getNetIncomingAndPresentShips(mapFuture, target) >= 0
         end)
         local safeNeutralData = {}
         for _,target in ipairs(candidates) do
@@ -202,7 +204,7 @@ function _m_init()
             if self:isFullAttackViable(map, mapTunnels, mapFuture, botUser, fullAttackData) then
                 -- print("is full attack safe: " .. getNeutralDesc(map, mapTunnels, botUser, fullAttackData.target))
                 table.insert(safeNeutralData, fullAttackData)
-            else 
+            else
                 -- print("is not full attack safe: " .. getNeutralDesc(map, mapTunnels, botUser, fullAttackData.target))
             end
         end 
@@ -238,37 +240,6 @@ function _m_init()
         end 
 
         return true
-    end
-
-    function getFullAttackData(map, mapTunnels, target, botUser, reservations)
-        local ownsPlanetAtEnd, shipDiff, friendlyProdFromTarget, capturingSources, newReservations = mapFuture:simulateFullAttack(map, mapTunnels, target, botUser, reservations)
-        return {
-            target = target,
-            ownsPlanetAtEnd = ownsPlanetAtEnd,
-            shipDiff = shipDiff,
-            friendlyProdFromTarget = friendlyProdFromTarget,
-            capturingSources = capturingSources,
-            newReservations = newReservations,
-        }
-    end
-
-    function getNeutralDesc(map, mapTunnels, botUser, neutral)
-        local home = getHome(map, mapTunnels, botUser)
-        local enemyHome = getHome(map, mapTunnels, map:getEnemyUser(botUser))
-        local ownership = "My"
-        if mapTunnels:getSimplifiedTunnelDist(enemyHome.n, neutral.n) < mapTunnels:getSimplifiedTunnelDist(home.n, neutral.n) then 
-            ownership = "Their"
-        end
-        return ownership .. common_utils.round(neutral.ships)
-    end
-
-    function getMinShipsToCapture(map, mapFuture, botUser, target)
-        return target.ships - mapFuture:getNetIncomingShips(target)
-    end
-    
-    -- TODO: this is really an approximation. A bit hacky
-    function getHome(map, mapTunnels, user)
-        return common_utils.find(map:getPlanetList(user.n), function(p) return p.production end)
     end
 
     function getPositiveRoiNeutralData(map, mapTunnels, user, neutrals)

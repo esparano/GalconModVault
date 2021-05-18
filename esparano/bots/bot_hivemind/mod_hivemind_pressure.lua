@@ -16,11 +16,11 @@ function _m_init()
         return instance
     end
 
-    function PressureMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function PressureMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function PressureMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function PressureMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
 
     end
 

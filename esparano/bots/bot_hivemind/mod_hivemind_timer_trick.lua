@@ -17,11 +17,11 @@ function _m_init()
         return instance
     end
 
-    function TimerTrickMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function TimerTrickMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function TimerTrickMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function TimerTrickMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
     
     end
 

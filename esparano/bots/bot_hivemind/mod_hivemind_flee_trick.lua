@@ -22,11 +22,11 @@ function _m_init()
         return instance
     end
 
-    function FleeTrickMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function FleeTrickMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function FleeTrickMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function FleeTrickMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
 
     end
 

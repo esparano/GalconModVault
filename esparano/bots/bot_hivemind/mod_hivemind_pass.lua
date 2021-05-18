@@ -14,11 +14,11 @@ function _m_init()
         return instance
     end
 
-    function PassMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function PassMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return { Action.newPass(0, self, "pass") }
     end
 
-    function PassMind:gradeAction(map, mapTunnels, mapFuture, botUser, action) 
+    function PassMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans) 
     end
 
     return PassMind

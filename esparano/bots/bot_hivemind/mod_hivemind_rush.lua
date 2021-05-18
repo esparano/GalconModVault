@@ -21,11 +21,11 @@ function _m_init()
         return instance
     end
 
-    function RushMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function RushMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function RushMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function RushMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
 
     end
 

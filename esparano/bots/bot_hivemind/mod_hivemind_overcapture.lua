@@ -15,12 +15,12 @@ function _m_init()
     end
 
     -- does not suggest moves
-    function OvercaptureMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function OvercaptureMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
     --adds penalty to moves that will capture with too many ships?? Not sure. Is this necessary or does EvenDistributionMind take care of this?
-    function OvercaptureMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function OvercaptureMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
         
     end
 

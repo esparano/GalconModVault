@@ -26,6 +26,7 @@ require("mod_hivemind_swap")
 require("mod_hivemind_timer_trick")
 
 require("mod_hivemind_action")
+require("mod_hivemind_utils")
 
 function firstTurnSetup(params)
     print("first turn setup")
@@ -101,14 +102,27 @@ function bot_hivemind(params, sb_stats)
             expand_targetCostWeight = 1,
             expand_ownedPlanetMaxShipLoss = 1,
             expand_negativeRoiReductionFactor = 1,
-            feedFront_basicFeedFrontSendAmountWeight = 1,
-            feedFront_basicFeedFrontDistWeight = 1,
-            feedFront_basicFeedFrontOverallWeight = 1,
+            feedFront_frontWeightFrontProd = 1,
+            feedFront_frontWeightFrontShips = 1,
+            feedFront_frontWeightShipDiff = 1,
+            feedFront_frontWeightStolenProd = 1,
+            feedFront_frontWeightEnemyDistIntercept = 1,
+            feedFront_frontWeightEnemyOverall = 1,
+            feedFront_frontWeightEnemyShipsExponent = 1,
+            feedFront_frontWeightEnemyProdExponent = 1,
+            feedFront_frontWeightEnemyProdShipsBalance = 1,
+            feedFront_frontWeightEnemyDistExponent = 1,
+            feedFront_targetWeightExponent = 1,
+            feedFront_targetDistExponent = 1,
+            feedFront_targetDistDiscount = 1,
+            feedFront_targetDistDiscountExponent = 1,
+            feedFront_feedSendAmountWeight = 1,
+            feedFront_feedDistWeight = 1,
+            feedFront_feedOverallWeight = 1,
         },
         settings = {
             multiSelect = true,
         }
-        
     }
     OPTS = common_utils.mergeTableInto(defaultOptions, params.options or {})
 
@@ -190,14 +204,14 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
 
     local candidates = {}
     for _,mind in ipairs(minds) do 
-        local actions = mind:suggestActions(map, mapTunnels, mapFuture, botUser)
+        local actions = mind:suggestActions(map, mapTunnels, mapFuture, botUser, mem.plans)
         for _,action in ipairs(actions) do
             table.insert(candidates, action)
         end
     end
 
     for _,action in ipairs(candidates) do
-        gradeAction(action, minds)
+        gradeAction(action, minds, mem.plans)
     end
 
     candidates = common_utils.filter(candidates, function (a) return a:getOverallPriority() >= 0 end)
@@ -205,7 +219,7 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
     -- Instead, the highest-priority move should track and apply its reservations and only then determine if the secondary action is compatible.
     -- TODO: THe way that moves with different percentages get combined, it may break "reservations" slightly.
-    candidates = getCombinedActions(candidates, minds, opts.multiSelect)
+    candidates = getCombinedActions(candidates, minds, opts.settings.multiSelect)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
     table.sort(candidates, function (a, b) 
@@ -222,16 +236,16 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     return chosenAction, candidates
 end
 
-function gradeAction(action, minds)
-    for _,mind in ipairs(minds) do 
+function gradeAction(action, minds, plans)
+    for _,mind in ipairs(minds) do
         if mind ~= action.mind then
             -- TODO: bias and multiplier for each mind's priority and adjustments? 4 parameters? Idk.
-            mind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+            mind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
         end
     end
 end
 
-function getCombinedActions(actions, minds, multiselect)
+function getCombinedActions(actions, minds, multiSelect)
     local allActions = common_utils.shallow_copy(actions)
     local newActions = common_utils.shallow_copy(actions) 
 
@@ -251,7 +265,7 @@ function getCombinedActions(actions, minds, multiselect)
                 if i < j or iterations > 1 then 
                     -- Combined actions may not have any base actions in common.
                     if comboActionSourceMap[a1]:intersection(comboActionSourceMap[a2]):size() == 0 then 
-                        local a = combineActions(a1, a2, multiselect)
+                        local a = combineActions(a1, a2, multiSelect)
                         if a then
                             comboActionSourceMap[a] = comboActionSourceMap[a1]:union(comboActionSourceMap[a2])
                             gradeAction(a, minds)
@@ -281,13 +295,16 @@ end
 
 function combineActions(a1, a2, multiSelect)
     -- incompatible actions
+    if a1.actionType == ACTION_TYPE_PASS or a2.actionType == ACTION_TYPE_PASS then return end
     if a1.actionType ~= a2.actionType then return end
     if a1.target.n ~= a2.target.n then return end
+
     -- TODO: how to combine actions from different minds?? add priorities and regrade for all minds except originating minds?
     if a1.mind.name ~= a2.mind.name then return end
+
     -- TODO: for now, only combine new plans with old plans or 2 old plans, etc.
     if #a1.plans > 0 and #a2.plans > 0 then return end
-    local combinedAction = doCombineActions(a1, a2)
+    local combinedAction = doCombineActions(a1, a2, multiSelect)
     return combinedAction
 end
 
@@ -351,15 +368,4 @@ function doCombineActions(a1, a2, multiSelect)
     end
 end
 
-function debugDrawTunnels(botUser, map, mapTunnels, owner, targets)
-    local tunnelPairs = {}
-    for i,source in ipairs(map:getPlanetList(owner)) do 
-        local closestTarget = getClosestTarget(mapTunnels, source, targets)
-        if closestTarget ~= nil and source.n ~= closestTarget.n then
-            local tunnelAlias = mapTunnels:getTunnelAlias(source.n, closestTarget.n)
-            table.insert(tunnelPairs, {source = source, target = tunnelAlias})
-        end
-    end
-    DEBUG.debugDrawPaths(botUser, tunnelPairs, owner)
-end
 

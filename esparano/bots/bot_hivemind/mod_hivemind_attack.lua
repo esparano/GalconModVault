@@ -20,11 +20,11 @@ function _m_init()
     --[[
         #Num moves suggested as configurable per mind?? Max num?#  
     ]]
-    function AttackMind:suggestActions(map, mapTunnels, mapFuture, botUser)
+    function AttackMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
         return {}
     end
 
-    function AttackMind:gradeAction(map, mapTunnels, mapFuture, botUser, action)
+    function AttackMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
         -- action:addOpinion(0, self, "no opinion")
     end
 
