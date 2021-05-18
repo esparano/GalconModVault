@@ -280,14 +280,11 @@ function _module_init()
         )
         local resultInfos = common_utils.filter(friendlyPlanets, 
             function (sourceInfo)
-                local closestEnemyInfo = common_utils.find(enemyPlanets,
-                    function (targetInfo) 
-                        return - mapTunnels:getSimplifiedTunnelDist(sourceInfo.n, targetInfo.n) 
-                    end
-                )
-                if closestEnemyInfo == nil then return false end 
-                local alias = mapTunnels:getTunnelAlias(sourceInfo.n, closestEnemyInfo.n)
-                return alias.owner ~= user.n and not friendlyPlannedCapturesSet:contains(alias.n)
+                for i,enemyInfo in ipairs(enemyPlanets) do 
+                    local alias = self:getTunnelAlias(sourceInfo.n, enemyInfo.n)
+                    if alias.owner ~= user.n and not friendlyPlannedCapturesSet:contains(alias.n) then return true end 
+                end
+                return false 
             end
         )
         return common_utils.map(resultInfos, function (info) return self.items[info.n] end)
