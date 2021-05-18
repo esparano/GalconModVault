@@ -18,11 +18,11 @@ function _m_init()
         return instance
     end
 
-    function MidRushMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function MidRushMind:suggestActions(plans)
         return {}
     end
 
-    function MidRushMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function MidRushMind:gradeAction(action, plans)
         
     end
 

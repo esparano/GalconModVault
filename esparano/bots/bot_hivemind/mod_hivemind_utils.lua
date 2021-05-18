@@ -4,8 +4,8 @@ require("mod_game_utils")
 require("mod_common_utils")
 require("mod_set")
  
-function getFullAttackData(map, mapTunnels, target, botUser, reservations)
-    local ownsPlanetAtEnd, shipDiff, friendlyProdFromTarget, capturingSources, newReservations = mapFuture:simulateFullAttack(map, mapTunnels, target, botUser, reservations)
+function getFullAttackData(map, mapTunnels, mapFuture, botUser, target, reservations)
+    local ownsPlanetAtEnd, shipDiff, friendlyProdFromTarget, capturingSources, newReservations = mapFuture:simulateFullAttack(map, mapTunnels, botUser, target, reservations)
     return {
         target = target,
         ownsPlanetAtEnd = ownsPlanetAtEnd,

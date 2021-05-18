@@ -74,7 +74,7 @@ function _module_init()
     --  negative shipDiff indicates planet was overcome
     --  positive shipDiff but owned = false indicates enemy presence was too strong to capture
     --  positive shipDiff and owned = true indicates that the defense succeeded by "shipDiff" ships
-    function MapFuture:simulateFullAttack(map, mapTunnels, target, capturingUser, reservations, allowRedirects)
+    function MapFuture:simulateFullAttack(map, mapTunnels, capturingUser, target, reservations, allowRedirects)
         reservations = reservations or self.reservations
         -- sort both fleets and planets by tunnel distance to target
         local sourceData = common_utils.map(map:getNonNeutralPlanetAndFleetList(), function (o) 

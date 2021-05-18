@@ -19,11 +19,11 @@ function _m_init()
         return instance
     end
 
-    function CleanupMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function CleanupMind:suggestActions(plans)
         return {}
     end
 
-    function CleanupMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function CleanupMind:gradeAction(action, plans)
 
     end
 

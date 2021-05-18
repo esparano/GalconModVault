@@ -18,12 +18,12 @@ function _m_init()
         return instance
     end
 
-    function DefendMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function DefendMind:suggestActions(plans)
         return {}
     end
 
     -- TODO: figure out how to deal with expansion logic while defending???
-    function DefendMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function DefendMind:gradeAction(action, plans)
 
     end
 

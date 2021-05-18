@@ -16,11 +16,11 @@ function _m_init()
         return instance
     end
 
-    function SurrenderMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function SurrenderMind:suggestActions(plans)
         return {}
     end
 
-    function SurrenderMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function SurrenderMind:gradeAction(action, plans)
 
     end
 

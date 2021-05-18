@@ -19,11 +19,11 @@ function _m_init()
         return instance
     end
 
-    function FloatMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function FloatMind:suggestActions(plans)
         return {}
     end
 
-    function FloatMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function FloatMind:gradeAction(action, plans)
         
     end
 

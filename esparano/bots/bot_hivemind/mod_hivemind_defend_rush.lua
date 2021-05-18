@@ -19,11 +19,11 @@ function _m_init()
         return instance
     end
 
-    function DefendRushMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function DefendRushMind:suggestActions(plans)
         return {}
     end
 
-    function DefendRushMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function DefendRushMind:gradeAction(action, plans)
         
     end
 

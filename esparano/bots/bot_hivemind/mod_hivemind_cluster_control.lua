@@ -18,11 +18,11 @@ function _m_init()
         return instance
     end
 
-    function ClusterControlMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function ClusterControlMind:suggestActions(plans)
         return {}
     end
 
-    function ClusterControlMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function ClusterControlMind:gradeAction(action, plans)
  
     end
 

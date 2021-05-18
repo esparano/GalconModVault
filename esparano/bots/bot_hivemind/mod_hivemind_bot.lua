@@ -32,51 +32,54 @@ function firstTurnSetup(params)
     print("first turn setup")
 end
 
-function getOptsForMind(mindName, opts)
-    local mindOpts = {}
-    for k,v in pairs(opts.optimized) do 
+function getOptsForMind(mindName, params)
+    local mindParams = {}
+    for k,v in pairs(params.optimized) do 
         local tokens = {}
         for token in string.gmatch(k, "[^_]+") do 
             table.insert(tokens, token)
         end
         if string.lower(tokens[1]) == string.lower(mindName) then 
             local optKey = string.sub(k,  #mindName + 2)
-            mindOpts[optKey] = v
+            mindParams[optKey] = v
         end
     end
-    mindOpts.settings = opts.settings
-    return mindOpts
+    for k,v in pairs(params.passThrough) do 
+        mindParams[k] = v
+    end
+    mindParams.settings = params.settings
+    return mindParams
 end
 
-function initMinds(opts) 
+function initMinds(params) 
     local minds = {}
      -- sets positive RoI planets as tunnelable. Should analyze earlier than most other minds.
-    table.insert(minds, ExpandMind.new(getOptsForMind("expand", opts)))
-    table.insert(minds, AttackMind.new(getOptsForMind("attack", opts)))
-    -- table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", opts)))
-    -- table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", opts)))
-    -- table.insert(minds, ClusterControlMind.new(getOptsForMind("clustercontrol", opts)))
-    -- table.insert(minds, DefendRushMind.new(getOptsForMind("defendrush", opts)))
-    table.insert(minds, DefendMind.new(getOptsForMind("defend", opts)))
-    -- table.insert(minds, EvenDistributionMind.new(getOptsForMind("evendistribution", opts)))
-    table.insert(minds, ExploitEmptyMind.new(getOptsForMind("exploitempty", opts)))
-    table.insert(minds, FeedFrontMind.new(getOptsForMind("feedfront", opts)))
-    -- table.insert(minds, FleeTrickMind.new(getOptsForMind("fleetrick", opts)))
-    table.insert(minds, FloatMind.new(getOptsForMind("float", opts)))
-    table.insert(minds, MidRushMind.new(getOptsForMind("midrush", opts)))
-    -- table.insert(minds, OvercaptureMind.new(getOptsForMind("overcapture", opts)))
-    table.insert(minds, PassMind.new(getOptsForMind("pass", opts)))
-    -- table.insert(minds, PressureMind.new(getOptsForMind("pressure", opts)))
-    -- table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", opts)))
-    table.insert(minds, RushMind.new(getOptsForMind("rush", opts)))
-    -- table.insert(minds, SurrenderMind.new(getOptsForMind("surrender", opts)))
-    -- table.insert(minds, SwapMind.new(getOptsForMind("swap", opts)))
-    -- table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", opts)))
+    table.insert(minds, ExpandMind.new(getOptsForMind("expand", params)))
+    table.insert(minds, AttackMind.new(getOptsForMind("attack", params)))
+    -- table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", params)))
+    -- table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", params)))
+    -- table.insert(minds, ClusterControlMind.new(getOptsForMind("clustercontrol", params)))
+    -- table.insert(minds, DefendRushMind.new(getOptsForMind("defendrush", params)))
+    table.insert(minds, DefendMind.new(getOptsForMind("defend", params)))
+    -- table.insert(minds, EvenDistributionMind.new(getOptsForMind("evendistribution", params)))
+    table.insert(minds, ExploitEmptyMind.new(getOptsForMind("exploitempty", params)))
+    -- table.insert(minds, FeedFrontMind.new(getOptsForMind("feedfront", params)))
+    -- table.insert(minds, FleeTrickMind.new(getOptsForMind("fleetrick", params)))
+    table.insert(minds, FloatMind.new(getOptsForMind("float", params)))
+    table.insert(minds, MidRushMind.new(getOptsForMind("midrush", params)))
+    -- table.insert(minds, OvercaptureMind.new(getOptsForMind("overcapture", params)))
+    table.insert(minds, PassMind.new(getOptsForMind("pass", params)))
+    -- table.insert(minds, PressureMind.new(getOptsForMind("pressure", params)))
+    -- table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", params)))
+    table.insert(minds, RushMind.new(getOptsForMind("rush", params)))
+    -- table.insert(minds, SurrenderMind.new(getOptsForMind("surrender", params)))
+    -- table.insert(minds, SwapMind.new(getOptsForMind("swap", params)))
+    -- table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", params)))
     return minds
 end
 
 function bot_hivemind(params, sb_stats)
-    ITEMS = params.items
+    local ITEMS = params.items
     local botUser = ITEMS[params.user]
     local defaultOptions = {
         -- TODO: fill these out
@@ -124,10 +127,10 @@ function bot_hivemind(params, sb_stats)
             multiSelect = true,
         }
     }
-    OPTS = common_utils.mergeTableInto(defaultOptions, params.options or {})
+    local OPTS = common_utils.mergeTableInto(defaultOptions, params.options or {})
 
-    MEM = params.memory
-    DEBUG = params.debug or {
+    local MEM = params.memory
+    local DEBUG = params.debug or {
         debugHighlightPlanets = common_utils.pass,
         debugDrawPaths = common_utils.pass
     }
@@ -148,17 +151,25 @@ function bot_hivemind(params, sb_stats)
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
     MEM.plans = MEM.plans or {}
     -- update mapTunnelsData, then clone it for use in this function to avoid neutrals marked tunnelable from being permanently (mistakenly) tunnelable even if the map changes a lot
-    mapTunnels = MapTunnels.new(ITEMS, MEM.mapTunnelsData)
-    mapTunnels = MapTunnels.new(ITEMS, common_utils.copy(MEM.mapTunnelsData))
+    local mapTunnels = MapTunnels.new(ITEMS, MEM.mapTunnelsData)
+    local mapTunnels = MapTunnels.new(ITEMS, common_utils.copy(MEM.mapTunnelsData))
 
-    mapFuture = MapFuture.new(ITEMS, botUser)
+    local mapFuture = MapFuture.new(ITEMS, botUser)
 
     if not MEM.initialized then
         MEM.initialized = true
-        firstTurnSetup(params)
+        -- firstTurnSetup(params)
     end
 
-    local move = getMove(map, mapTunnels, mapFuture, botUser, OPTS, MEM)
+    -- set on each Mind
+    OPTS.passThrough = {
+        map = map,
+        mapTunnels = mapTunnels,
+        mapFuture = mapFuture,
+        botUser = botUser,
+    }
+
+    local move = getMove(OPTS, MEM)
     print("CHOOSE: " .. move:getSummary())
     print("------------------------------------------------")
 
@@ -188,15 +199,15 @@ function bot_hivemind(params, sb_stats)
     return {percent = move.percent, from = sources, to = move.target.n}
 end
 
-function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
+function getMove(params, mem)
     -- TODO: params for genetic algorithm
-    local minds = initMinds(opts);
+    local minds = initMinds(params);
 
     -- update minds' state with chosen plans and update saved plans.
     for _,mind in ipairs(minds) do
         for _,plan in ipairs(mem.plans) do
             if mind.name == plan.mindName then
-                mind:processPlan(map, mapTunnels, mapFuture, botUser, plan)
+                mind:processPlan(plan)
             end
         end
     end
@@ -204,7 +215,7 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
 
     local candidates = {}
     for _,mind in ipairs(minds) do 
-        local actions = mind:suggestActions(map, mapTunnels, mapFuture, botUser, mem.plans)
+        local actions = mind:suggestActions(mem.plans)
         for _,action in ipairs(actions) do
             table.insert(candidates, action)
         end
@@ -219,7 +230,7 @@ function getMove(map, mapTunnels, mapFuture, botUser, opts, mem)
     -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
     -- Instead, the highest-priority move should track and apply its reservations and only then determine if the secondary action is compatible.
     -- TODO: THe way that moves with different percentages get combined, it may break "reservations" slightly.
-    candidates = getCombinedActions(candidates, minds, opts.settings.multiSelect)
+    candidates = getCombinedActions(candidates, minds, params.settings.multiSelect)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
     table.sort(candidates, function (a, b) 
@@ -240,7 +251,7 @@ function gradeAction(action, minds, plans)
     for _,mind in ipairs(minds) do
         if mind ~= action.mind then
             -- TODO: bias and multiplier for each mind's priority and adjustments? 4 parameters? Idk.
-            mind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+            mind:gradeAction(action, plans)
         end
     end
 end

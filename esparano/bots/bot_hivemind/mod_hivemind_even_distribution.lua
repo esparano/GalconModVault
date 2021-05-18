@@ -17,11 +17,11 @@ function _m_init()
         return instance
     end
 
-    function EvenDistributionMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function EvenDistributionMind:suggestActions(plans)
         return {}
     end
 
-    function EvenDistributionMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function EvenDistributionMind:gradeAction(action, plans)
         
     end
 

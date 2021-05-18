@@ -18,11 +18,11 @@ function _m_init()
         return instance
     end
 
-    function SwapMind:suggestActions(map, mapTunnels, mapFuture, botUser, plans)
+    function SwapMind:suggestActions(plans)
         return {}
     end
 
-    function SwapMind:gradeAction(map, mapTunnels, mapFuture, botUser, action, plans)
+    function SwapMind:gradeAction(action, plans)
 
     end
 
