@@ -33,11 +33,11 @@ function getAmountSent(source, percent)
     return amt
 end
 
-function getNeutralDesc(map, mapTunnels, botUser, neutral)
-    local home = getHome(map, mapTunnels, botUser)
-    local enemyHome = getHome(map, mapTunnels, map:getEnemyUser(botUser))
+function getPlanetDesc(map, botUser, neutral)
+    local home = getHome(map, botUser)
+    local enemyHome = getHome(map, map:getEnemyUser(botUser))
     local ownership = "My"
-    if mapTunnels:getSimplifiedTunnelDist(enemyHome.n, neutral.n) < mapTunnels:getSimplifiedTunnelDist(home.n, neutral.n) then 
+    if game_utils.distance(enemyHome, neutral) < game_utils.distance(home, neutral) then 
         ownership = "Their"
     end
     return ownership .. common_utils.round(neutral.ships)
@@ -48,7 +48,7 @@ function getNetIncomingAndPresentShips(mapFuture, target)
 end
 
 -- TODO: this is really an approximation. A bit hacky
-function getHome(map, mapTunnels, user)
+function getHome(map, user)
     return common_utils.find(map:getPlanetList(user.n), function(p) return p.production end)
 end
 

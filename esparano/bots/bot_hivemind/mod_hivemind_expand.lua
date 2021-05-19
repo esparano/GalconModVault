@@ -139,7 +139,7 @@ function _m_init()
                             plan = self:constructPlan(data.target)
                         end
                         local desc = isPreplanned and "Planned@" or "New@"
-                        local neutralDesc = self:getNeutralDesc(data.target)
+                        local neutralDesc = self:getPlanetDesc(data.target)
 
                         -- print("sending " .. percent .. " to " .. to.ships .. " which needs " .. capturingSourceShipsNeeded)
                         -- for i,source in ipairs(sources) do 
@@ -203,7 +203,7 @@ function _m_init()
             if self:isFullAttackViable(fullAttackData) then
                 table.insert(safeNeutralData, fullAttackData)
             else
-                -- print("is not full attack safe: " .. getNeutralDesc(self.map, self.mapTunnels, self.botUser, fullAttackData.target))
+                -- print("is not full attack safe: " .. self:getPlanetDesc(fullAttackData.target))
             end
         end 
         return safeNeutralData
@@ -235,9 +235,9 @@ function _m_init()
                 -- TODO: this could be overly cautious. Sometimes you still want to expand despite not owning a planet at the end, \
                 -- for example, if the prod gained by the neutral is greater than the sum of lost prod from lost front planets.
                 if not frontAttackData.ownsPlanetAtEnd then 
-                    local neutralDesc = self:getNeutralDesc(neutralAttackData.target)
-                    local frontDesc = self:getNeutralDesc(frontAttackData.target)
-                    print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
+                    local neutralDesc = self:getPlanetDesc(neutralAttackData.target)
+                    local frontDesc = self:getPlanetDesc(frontAttackData.target)
+                    -- print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
                     return false
                 end 
             end
@@ -246,8 +246,8 @@ function _m_init()
         return true
     end
 
-    function ExpandMind:getNeutralDesc(p)
-        return getNeutralDesc(self.map, self.mapTunnels, self.botUser, p)
+    function ExpandMind:getPlanetDesc(p)
+        return getPlanetDesc(self.map, self.botUser, p)
     end
 
     function ExpandMind:getFullAttackData(target, reservations)

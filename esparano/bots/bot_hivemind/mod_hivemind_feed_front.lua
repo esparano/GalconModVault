@@ -82,7 +82,7 @@ function _m_init()
     
             local initialPriority = self:getFeedPriority(sourceInfo, targetInfo)
             local alias = self.mapTunnels:getTunnelAlias(sourceInfo.p.n, targetInfo.p.n)
-            local desc = "Feed@" .. getNeutralDesc(self.map, self.mapTunnels, self.botUser, targetInfo.p)
+            local desc = "Feed@" .. getPlanetDesc(self.map, self.botUser, targetInfo.p)
             -- no plan because this is not a multi-turn action
             local action = Action.newSend(initialPriority, self, desc, {}, {sourceInfo.p}, alias, sourceInfo.percent)
             table.insert(candidates, action)
