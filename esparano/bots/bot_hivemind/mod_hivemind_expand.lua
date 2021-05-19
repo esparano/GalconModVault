@@ -31,40 +31,39 @@ function _m_init()
         return instance
     end
 
-    function ExpandMind:processPlan(plan)
-        local satisfied, fullAttackData = self:updatePlannedCapture(plan.data.targetN)
-        if satisfied then 
-            plan.satisfied = true
-        else
-            table.insert(self.plannedCapturesData, fullAttackData)
+    function ExpandMind:processPlan(plan, confirmedPlans)
+        local viable, fullAttackData = self:updatePlannedCapture(plan, confirmedPlans)
+        if viable then 
+            table.insert(self.plannedCapturesData, fullAttackData)           
         end
+        return viable
     end
 
-    -- TODO: shuttle ships towards planets that will be expanded so that we can expand faster if we want? Shuttle ships towards planets that are close to + shipdiff and good returns/prod?
-
-    -- return whether plan is satisfied already, 
-    -- and if not satisfied yet, returns fullAttackData
-    function ExpandMind:updatePlannedCapture(targetN)
-        local target = self.map._items[targetN]
+    -- return whether plan is viable, 
+    -- and if viable, returns fullAttackData
+    function ExpandMind:updatePlannedCapture(plan, confirmedPlans)
+        local target = self.map._items[plan.data.targetN]
 
         assert.is_true(target.is_planet, "planned expansion target was not a planet!!")
 
         -- target was already captured
-        if not target.neutral then return true end
-
-        local fullAttackData = self:getFullAttackData(target)
+        if not target.neutral then return false end
 
         -- abandon plan if no longer viable
-        if not self:isFullAttackViable(fullAttackData) then 
-            print("abandoning plan to capture " .. self:getNeutralDesc(fullAttackData.target))
-            return true 
+        local viable, fullAttackData = self:isFullAttackViable(target, confirmedPlans)
+        if not viable then
+            print("abandoning plan to capture " .. self:getPlanetDesc(target))
+            return false 
         end
 
-        self.mapTunnels:setTunnelable(target)
+        -- update estimated distance until capture for this planned target
+        plan.data.neutralCaptureDist = fullAttackData.neutralCaptureDist
 
+        self.mapTunnels:setTunnelable(target)
+        
         self.mapFuture:updateReservations(fullAttackData.newReservations)
 
-        return false, fullAttackData
+        return true, fullAttackData
     end
 
     function ExpandMind:suggestActions(plans)
@@ -76,8 +75,9 @@ function _m_init()
         -- planned front planet.
         -- getNeutralsDataWithPositiveRoi(self.map, self.mapTunnels, self.botUser)
 
-        candidates = common_utils.combineLists(candidates, self:suggestFullAttackSafeActions())
+        candidates = common_utils.combineLists(candidates, self:suggestFullAttackSafeActions(plans))
         -- TODO: send towards "good" areas, summing prod for each branch/front planet etc.
+        -- TODO: shuttle ships towards planets that will be expanded so that we can expand faster if we want? Shuttle ships towards planets that are close to + shipdiff and good returns/prod?
 
         return candidates
     end
@@ -88,10 +88,10 @@ function _m_init()
     ----------------------------------------------------
 
     -- TODO: performance issues when there are many planets
-    function ExpandMind:suggestFullAttackSafeActions()
+    function ExpandMind:suggestFullAttackSafeActions(plans)
         local candidates = {}
     
-        local safeNeutralData = self:getFullAttackSafeNeutralData()
+        local safeNeutralData = self:getFullAttackSafeNeutralData(plans)
         -- plannedCaptures were already verified to be full-attack safe.
         safeNeutralData = common_utils.combineLists(safeNeutralData, self.plannedCapturesData)
         -- only send if the neutral won't already be captured by incoming fleets
@@ -103,51 +103,56 @@ function _m_init()
             local isPreplanned = common_utils.findFirst(self.plannedCapturesData, function (p) return p == data end)
 
             local capturingSource = data.capturingSources[#data.capturingSources]
-            if capturingSource.is_planet then
-                -- TODO: This just gets the last friendly planet before capture, even if we need to wait for more production to help capture. 
-                -- Instead, we should return whether or not the attack needs to wait for prod or whether an actual planet can send some ships now  
-                local capturingSourceShipsNeeded = data.newReservations[capturingSource.n]
-                if capturingSourceShipsNeeded > 0 or (capturingSourceShipsNeeded == 0 and data.target.ships == 0) then 
-                    
-                    local percent = game_utils.percentToUse(capturingSource, capturingSourceShipsNeeded)
-                    local to = self.mapTunnels:getTunnelAlias(capturingSource.n, data.target.n)
+            -- if there are no capturingSources, this means prod captured, not a friendly source.
+            if #data.capturingSources > 0 and capturingSource.is_planet then
+                local sourceCaptureDist = self.mapTunnels:getSimplifiedTunnelDist(capturingSource.n, data.target.n)
+                -- only send if this is the final planet that actually captures the neutral AND the neutral wasn't simply captured later by future prod!
+                if sourceCaptureDist == data.neutralCaptureDist then 
+                    -- TODO: This just gets the last friendly planet before capture, even if we need to wait for more production to help capture. 
+                    -- Instead, we should return whether or not the attack needs to wait for prod or whether an actual planet can send some ships now  
+                    local capturingSourceShipsNeeded = data.newReservations[capturingSource.n]
+                    if capturingSourceShipsNeeded > 0 or (capturingSourceShipsNeeded == 0 and data.target.ships == 0) then 
+                        
+                        local percent = game_utils.percentToUse(capturingSource, capturingSourceShipsNeeded)
+                        local to = self.mapTunnels:getTunnelAlias(capturingSource.n, data.target.n)
 
-                    local sources = {capturingSource}
+                        local sources = {capturingSource}
 
-                    for i,source in ipairs(data.capturingSources) do 
-                        if self.settings.multiSelect and source.is_planet and source ~= capturingSource then 
-                            local thisPercent = game_utils.percentToUse(source, data.newReservations[source.n])
-                            local thisTo = self.mapTunnels:getTunnelAlias(source.n, data.target.n)
-                            if thisPercent >= percent and thisTo.n == to.n then 
-                                table.insert(sources, source)
+                        for i,source in ipairs(data.capturingSources) do 
+                            if self.settings.multiSelect and source.is_planet and source ~= capturingSource then 
+                                local thisPercent = game_utils.percentToUse(source, data.newReservations[source.n])
+                                local thisTo = self.mapTunnels:getTunnelAlias(source.n, data.target.n)
+                                if thisPercent >= percent and thisTo.n == to.n then 
+                                    table.insert(sources, source)
+                                end
                             end
                         end
-                    end
 
-                    -- figure out how many ships will actually be sent (planets can't send if < 1 full ship)
-                    local total = 0
-                    for i,source in ipairs(sources) do
-                        total = total + getAmountSent(source, percent)
-                    end
-
-                    if total >= 1 then 
-                        -- add other sources to the plan if they have the same target and can afford the sending (without reservations etc.)
-
-                        local plan
-                        -- if plan already exists, no need to add a second plan to capture the same neutral.
-                        if not isPreplanned then 
-                            plan = self:constructPlan(data.target)
+                        -- figure out how many ships will actually be sent (planets can't send if < 1 full ship)
+                        local total = 0
+                        for i,source in ipairs(sources) do
+                            total = total + getAmountSent(source, percent)
                         end
-                        local desc = isPreplanned and "Planned@" or "New@"
-                        local neutralDesc = self:getPlanetDesc(data.target)
 
-                        -- print("sending " .. percent .. " to " .. to.ships .. " which needs " .. capturingSourceShipsNeeded)
-                        -- for i,source in ipairs(sources) do 
-                        --     print("source " .. source.ships)
-                        -- end
+                        if total >= 1 then 
+                            -- add other sources to the plan if they have the same target and can afford the sending (without reservations etc.)
 
-                        local action = Action.newSend(initialPriority, self, desc .. neutralDesc, {plan}, sources, to, percent)
-                        table.insert(candidates, action)
+                            local plan
+                            -- if plan already exists, no need to add a second plan to capture the same neutral.
+                            if not isPreplanned then
+                                plan = self:constructPlan(data)
+                            end
+                            local desc = isPreplanned and "Planned@" or "New@"
+                            local neutralDesc = self:getPlanetDesc(data.target)
+
+                            -- print("sending " .. percent .. " to " .. to.ships .. " which needs " .. capturingSourceShipsNeeded)
+                            -- for i,source in ipairs(sources) do
+                            --     print("source " .. source.ships)
+                            -- end
+
+                            local action = Action.newSend(initialPriority, self, desc .. neutralDesc, {plan}, sources, to, percent)
+                            table.insert(candidates, action)
+                        end
                     end
                 end
             else
@@ -185,12 +190,15 @@ function _m_init()
         return initialPriority
     end
 
-    function ExpandMind:constructPlan(target)
-        local data = {targetN = target.n}
+    function ExpandMind:constructPlan(fullAttackData)
+        local data = {
+            targetN = fullAttackData.target.n,
+            neutralCaptureDist = fullAttackData.neutralCaptureDist,
+        }
         return Plan.new(self.name, data)
     end
 
-    function ExpandMind:getFullAttackSafeNeutralData()
+    function ExpandMind:getFullAttackSafeNeutralData(plans)
         local candidates = common_utils.filter(self.map:getNeutralPlanetList(), function (target) return 
             -- don't attack neutrals that are already planned to be captured
             not common_utils.findFirst(self.plannedCapturesData, function (data) return data.target.n == target.n end)
@@ -199,8 +207,8 @@ function _m_init()
         end)
         local safeNeutralData = {}
         for _,target in ipairs(candidates) do
-            local fullAttackData = self:getFullAttackData(target)
-            if self:isFullAttackViable(fullAttackData) then
+            local viable, fullAttackData = self:isFullAttackViable(target, plans)
+            if viable then
                 table.insert(safeNeutralData, fullAttackData)
             else
                 -- print("is not full attack safe: " .. self:getPlanetDesc(fullAttackData.target))
@@ -209,49 +217,57 @@ function _m_init()
         return safeNeutralData
     end
 
+    -- TODO: if fleet is headed towards planned capture, past another planned capture and it can tunnel through second planned capture, redirect? Make sure ships headed to neutral
+    -- are counted properly in planning of capture of first neutral.
     -- TODO: discount certain planets completely using some quick-and-dirty method for optimization purposes?
 
     -- if planet is owned at end, OR if planet is lost but recovers twice its cost by the time the enemy arrives 
     -- (2x cost because of friendly investment plus the enemy doesn't need to invest anymore)
-    function ExpandMind:isFullAttackViable(neutralAttackData)
+    function ExpandMind:isFullAttackViable(target, plans)
+        local neutralAttackData = self:getFullAttackData(target, self.mapTunnels, nil, plans)
+
         local safe = neutralAttackData.ownsPlanetAtEnd or neutralAttackData.friendlyProdFromTarget > 2 * neutralAttackData.target.ships
         if not safe then return false end
 
-        print("isFullAttackViable: " .. neutralAttackData.target.ships)
-        -- TODO: neutrals to-be-captured are not included in prod for full-attack calculations :(
-
         local totalReservations = common_utils.copy(self.mapFuture:getReservations())
-        self.mapFuture:updateReservations(neutralAttackData.newReservations, totalReservations)
+        self.mapFuture:updateReservations(neutralAttackData.newReservations, totalReservations)    
+        
+        local updatedMapTunnels = common_utils.copy(self.mapTunnels)
+        assert.is_false(updatedMapTunnels:isTunnelable(neutralAttackData.target.n))
+        updatedMapTunnels:setTunnelable(neutralAttackData.target)
+        assert.is_false(self.mapTunnels:isTunnelable(neutralAttackData.target.n))
+
+        local friendlyPlannedCapturesSet = Set.new({neutralAttackData.target.n})
+        local frontPlanets = updatedMapTunnels:getFrontPlanets(self.botUser, friendlyPlannedCapturesSet)
+
+        local plansIncludingNeutral = common_utils.copy(plans)
+        table.insert(plansIncludingNeutral, self:constructPlan(neutralAttackData))
 
         -- if we reserve ships to attack the neutral planet, will we lose a front planet in a full attack?
-        local friendlyPlannedCapturesSet = Set.new({neutralAttackData.target.n})
-        -- TODO: wrong front planets???
-        local frontPlanets = self.mapTunnels:getFrontPlanets(self.botUser, friendlyPlannedCapturesSet)
-
         for i,p in ipairs(frontPlanets) do
             -- if the neutral IS a front planet, don't full-attack-test it a second time.
             if p.n ~= neutralAttackData.target.n then 
-                local frontAttackData = self:getFullAttackData(p, totalReservations)
+                local frontAttackData = self:getFullAttackData(p, updatedMapTunnels, totalReservations, plansIncludingNeutral)
                 -- TODO: this could be overly cautious. Sometimes you still want to expand despite not owning a planet at the end, \
                 -- for example, if the prod gained by the neutral is greater than the sum of lost prod from lost front planets.
                 if not frontAttackData.ownsPlanetAtEnd then 
                     local neutralDesc = self:getPlanetDesc(neutralAttackData.target)
                     local frontDesc = self:getPlanetDesc(frontAttackData.target)
-                    -- print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
+                    print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
                     return false
                 end 
             end
         end 
 
-        return true
+        return true, neutralAttackData
     end
 
     function ExpandMind:getPlanetDesc(p)
         return getPlanetDesc(self.map, self.botUser, p)
     end
 
-    function ExpandMind:getFullAttackData(target, reservations)
-        return getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.botUser, target, reservations)
+    function ExpandMind:getFullAttackData(target, mapTunnels, reservations, capturePlans)
+        return getFullAttackData(self.map, mapTunnels, self.mapFuture, self.botUser, target, reservations, capturePlans)
     end
 
     function ExpandMind:getNetIncomingAndPresentShips(p)

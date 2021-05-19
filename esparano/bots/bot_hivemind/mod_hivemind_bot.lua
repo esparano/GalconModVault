@@ -204,14 +204,18 @@ function getMove(params, mem)
     local minds = initMinds(params);
 
     -- update minds' state with chosen plans and update saved plans.
+    local confirmedPlans = {}
     for _,mind in ipairs(minds) do
         for _,plan in ipairs(mem.plans) do
             if mind.name == plan.mindName then
-                mind:processPlan(plan)
+                local viable = mind:processPlan(plan, confirmedPlans)
+                if viable then 
+                    table.insert(confirmedPlans, plan)
+                end
             end
         end
     end
-    mem.plans = common_utils.filter(mem.plans, function (p) return not p.satisfied end)
+    mem.plans = confirmedPlans
 
     local candidates = {}
     for _,mind in ipairs(minds) do 

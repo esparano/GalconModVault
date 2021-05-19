@@ -278,10 +278,11 @@ function _module_init()
                 return (p.owner ~= user.n and not p.neutral) or enemyPlannedCapturesSet:contains(info.n) 
             end
         )
-        local resultInfos = common_utils.filter(friendlyPlanets, 
+        local resultInfos = common_utils.filter(friendlyPlanets,
             function (sourceInfo)
-                for i,enemyInfo in ipairs(enemyPlanets) do 
+                for i,enemyInfo in ipairs(enemyPlanets) do
                     local alias = self:getTunnelAlias(sourceInfo.n, enemyInfo.n)
+                    -- print("from " .. self.items[sourceInfo.n].ships .. " to " .. self.items[enemyInfo.n].ships .. " alias " .. alias.ships)
                     if alias.owner ~= user.n and not friendlyPlannedCapturesSet:contains(alias.n) then return true end 
                 end
                 return false 

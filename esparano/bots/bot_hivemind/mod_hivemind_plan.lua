@@ -8,7 +8,6 @@ function _m_init()
 
         instance.mindName = mindName 
         instance.data = data
-        instance.satisfied = false
 
         return instance
     end
