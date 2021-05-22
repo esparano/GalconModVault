@@ -312,7 +312,6 @@ function loop(t)
     if win ~= nil then
         local winner_name = win.title_value
         local loser_name = findLoser(winner_name).title_value
-        elo.set_k(10)
         elo.update_elo(winner_name, loser_name, true)
         GAME.wins[winner_name] = (GAME.wins[winner_name] or 0) + 1
         update_stats()
@@ -321,7 +320,7 @@ function loop(t)
 end
 
 function get_winner()
-    local win = nil;
+    local win = nil
     local planets = g2.search("planet -neutral")
     for _i,p in ipairs(planets) do
         local user = p:owner()

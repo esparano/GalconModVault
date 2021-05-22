@@ -1,4 +1,5 @@
 require("mod_hivemind_bot")
+require("mod_elo")
 
 function _sandbox_init(_ENV) -- ignore -------------------------------------
     ----------------------------------------------------------------------------
@@ -26,6 +27,7 @@ function _sandbox_init(_ENV) -- ignore -------------------------------------
     end
 
     function bots_2(params)
+        return bot_hivemind(params, sb_stats)
         -- return bots_simple(params, false)
     end
 
@@ -126,11 +128,11 @@ function bots_register(name, loop, options)
 end
 
 function register_bots()
-    bots_register("Compare", "bots_2")
     bots_register("Dev", "bots_1",
     {
         debug = DEBUG
     })
+    bots_register("Compare", "bots_2")
     -- bots_register("simple", "bots_simple")
 end
 
@@ -171,6 +173,7 @@ function init()
         wins = {},
         total = 0,
         timeout = 300.0,
+        WIN_TIMER = 5, 
         players = 2, -- max number of players in a round
         speed = 1, -- more time per loop, 15 max (1/4 second)
         ticks = 1, -- more loops per frame
@@ -211,6 +214,7 @@ function next_game()
     math.randomseed(GAME.mapSeed)
     
     GAME.t = 0
+    GAME.win_t = GAME.WIN_TIMER
 
     local u0 = g2.new_user("neutral", COLORS[1])
     GAME.u_neutral = u0
@@ -358,24 +362,48 @@ function loop(t)
         end
     end
 
-    local win = nil
-    local planets = g2.search("planet -neutral")
-    for _i, p in ipairs(planets) do
-        local user = p:owner()
-        if (win == nil) then
-            win = user
-        end
-        if (win ~= user) then
-            return nil
-        end
-    end
-
+    local win = get_winner(t)
     if win ~= nil then
-        local name = win.title_value
-        GAME.wins[name] = (GAME.wins[name] or 0) + 1
-        update_stats()
+        local winner_name = win.title_value
+        local loser = findLoser(winner_name)
+        if loser then
+            local loser_name = loser.title_value
+            elo.update_elo(winner_name, loser_name, true)
+            GAME.wins[winner_name] = (GAME.wins[winner_name] or 0) + 1
+            update_stats()
+        end
         next_game()
     end
+end
+
+function findLoser(winner_name)
+    for n,user in pairs(GAME.users) do
+        if n ~= winner_name then return user end 
+    end
+end
+
+function get_winner(t)
+    local win = nil
+    local planets = g2.search("planet -neutral")
+    for _i,p in ipairs(planets) do
+        local user = p:owner()
+        if (win == nil) then          
+            win = user 
+        end
+        if (win ~= user) then 
+            GAME.win_t = GAME.WIN_TIMER
+            return nil 
+        end
+    end
+    GAME.win_t = GAME.win_t - t 
+    if GAME.win_t > 0 then return nil end
+    local fleets = g2.search("fleet")
+    for _i,f in ipairs(fleets) do
+        local user = f:owner()
+        if (win == nil) then win = user end
+        if (win ~= user) then return nil end
+    end
+    return win
 end
 
 function _bots_data()
