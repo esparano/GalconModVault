@@ -3,9 +3,12 @@ require("mod_hivemind_action")
 function _m_init()
     local OvercaptureMind = {}
 
-    function OvercaptureMind.new()
+    function OvercaptureMind.new(params)
         local instance = {}
         for k, v in pairs(OvercaptureMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

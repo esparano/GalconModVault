@@ -10,9 +10,12 @@ full on attack of enemy front planet works?
 function _m_init()
     local RushMind = {}
 
-    function RushMind.new()
+    function RushMind.new(params)
         local instance = {}
         for k, v in pairs(RushMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

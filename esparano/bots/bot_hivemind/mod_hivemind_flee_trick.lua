@@ -11,9 +11,12 @@ Make sure planet about to be captured is not a mid planet etc.
 function _m_init()
     local FleeTrickMind = {}
 
-    function FleeTrickMind.new()
+    function FleeTrickMind.new(params)
         local instance = {}
         for k, v in pairs(FleeTrickMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

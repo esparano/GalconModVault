@@ -17,7 +17,10 @@ function _m_init()
 
     function ExpandMind.new(params)
         local instance = {}
-        for k, v in pairs(ExpandMind) do
+        for k,v in pairs(ExpandMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
         for k,v in pairs(params) do 
@@ -52,7 +55,7 @@ function _m_init()
         -- abandon plan if no longer viable
         local viable, fullAttackData = self:isFullAttackViable(target, confirmedPlans)
         if not viable then
-            print("abandoning plan to capture " .. self:getPlanetDesc(target))
+            -- print("abandoning plan to capture " .. self:getPlanetDesc(target))
             return false 
         end
 
@@ -185,9 +188,9 @@ function _m_init()
         local isPreplanned = common_utils.findFirst(self.plannedCapturesData, function (p) return p == data end)
         local planContinuityBonus = isPreplanned and 15 * self.planContinuityBonus or 0
 
-        local initialPriority = self.fullAttackCaptureEase * captureEase / 10 + planContinuityBonus + gainBonus
-        initialPriority = initialPriority * self.fullAttackOverallWeight
-        return initialPriority
+        local priority = self.fullAttackCaptureEase * captureEase / 10 + planContinuityBonus + gainBonus
+        priority = self.overallWeight + self.overallBias - 1
+        return priority
     end
 
     function ExpandMind:constructPlan(fullAttackData)
@@ -232,10 +235,14 @@ function _m_init()
         local totalReservations = common_utils.copy(self.mapFuture:getReservations())
         self.mapFuture:updateReservations(neutralAttackData.newReservations, totalReservations)    
         
+        if not target.neutral then 
+            a.sdf = 1 
+        end
+        assert.is_true(target.neutral, "target was not neutral!!")
         local updatedMapTunnels = common_utils.copy(self.mapTunnels)
-        assert.is_false(updatedMapTunnels:isTunnelable(neutralAttackData.target.n))
+        assert.is_false(updatedMapTunnels:isTunnelable(neutralAttackData.target.n), "planet should not be tunnelable at this point!")
         updatedMapTunnels:setTunnelable(neutralAttackData.target)
-        assert.is_false(self.mapTunnels:isTunnelable(neutralAttackData.target.n))
+        assert.is_false(self.mapTunnels:isTunnelable(neutralAttackData.target.n), "updating hypothetical mapTunnels updated real mapTunnels!")
 
         local friendlyPlannedCapturesSet = Set.new({neutralAttackData.target.n})
         local frontPlanets = updatedMapTunnels:getFrontPlanets(self.botUser, friendlyPlannedCapturesSet)
@@ -253,11 +260,11 @@ function _m_init()
                 if not frontAttackData.ownsPlanetAtEnd then 
                     local neutralDesc = self:getPlanetDesc(neutralAttackData.target)
                     local frontDesc = self:getPlanetDesc(frontAttackData.target)
-                    print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
+                    -- print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
                     return false
                 end 
             end
-        end 
+        end
 
         return true, neutralAttackData
     end
@@ -273,8 +280,6 @@ function _m_init()
     function ExpandMind:getNetIncomingAndPresentShips(p)
         return getNetIncomingAndPresentShips(self.mapFuture, p)
     end
-
-    
 
     return ExpandMind
 end

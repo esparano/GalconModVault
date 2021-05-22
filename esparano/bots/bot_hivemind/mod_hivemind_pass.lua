@@ -3,9 +3,12 @@ require("mod_hivemind_action")
 function _m_init()
     local PassMind = {}
 
-    function PassMind.new()
+    function PassMind.new(params)
         local instance = {}
         for k, v in pairs(PassMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

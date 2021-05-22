@@ -6,9 +6,12 @@ require("mod_hivemind_action")
 function _m_init()
     local RedirectTrickMind = {}
 
-    function RedirectTrickMind.new()
+    function RedirectTrickMind.new(params)
         local instance = {}
         for k, v in pairs(RedirectTrickMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

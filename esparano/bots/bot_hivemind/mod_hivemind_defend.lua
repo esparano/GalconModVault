@@ -7,9 +7,12 @@ require("mod_hivemind_action")
 function _m_init()
     local DefendMind = {}
 
-    function DefendMind.new()
+    function DefendMind.new(params)
         local instance = {}
         for k, v in pairs(DefendMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

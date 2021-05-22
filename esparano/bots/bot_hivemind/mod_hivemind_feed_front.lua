@@ -96,9 +96,9 @@ function _m_init()
     -- introduce various nonlinearities 
     -- Should this use source/target weights?
     function FeedFrontMind:getFeedPriority(sourceInfo, targetInfo)
-        local initialPriority = self.feedSendAmountWeight * sourceInfo.amountSent / 5 + self.feedDistWeight * targetInfo.dist / 300 
-        initialPriority = initialPriority * self.feedOverallWeight
-        return initialPriority
+        local priority = self.feedSendAmountWeight * sourceInfo.amountSent / 5 + self.feedDistWeight * targetInfo.dist / 300 
+        priority = priority * self.overallWeight + self.overallBias - 1
+        return priority
     end
 
     -- TODO: if aliases are the same, merge weights?

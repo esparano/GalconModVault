@@ -6,9 +6,12 @@ require("mod_hivemind_action")
 function _m_init()
     local TimerTrickMind = {}
 
-    function TimerTrickMind.new()
+    function TimerTrickMind.new(params)
         local instance = {}
         for k, v in pairs(TimerTrickMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

@@ -8,9 +8,12 @@ surplus be amount for full on attack defense minus amount of ships owned?
 function _m_init()
     local CleanupMind = {}
 
-    function CleanupMind.new()
+    function CleanupMind.new(params)
         local instance = {}
         for k, v in pairs(CleanupMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

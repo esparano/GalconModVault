@@ -62,7 +62,7 @@ function _module_init()
 
     function MapFuture:updateReservations(updater, updatee)
         updatee = updatee or self.reservations
-        for k,v in pairs(updater) do 
+        for k,v in pairs(updater) do
             updatee[k] = updatee[k] or 0
             updatee[k] = updatee[k] + v
         end
@@ -144,6 +144,7 @@ function _module_init()
         local neutralCaptureDist
         -- can be used to count "stolen" prod from enemy target, or gained prod for neutral even if recaptured by enemy.
         local friendlyProdFromTarget = 0
+        local enemyProdFromTarget = 0
         local newReservations = {}
 
         for _,data in ipairs(sourceData) do
@@ -171,6 +172,8 @@ function _module_init()
 
             if owned then
                 friendlyProdFromTarget = friendlyProdFromTarget + game_utils.prodToShipsPerSec(target.production) * timeDiff
+            elseif not neutral then 
+                enemyProdFromTarget = enemyProdFromTarget + game_utils.prodToShipsPerSec(target.production) * timeDiff
             end
 
             local contribution = data.source.ships
@@ -231,7 +234,7 @@ function _module_init()
         --     print(owned, shipDiff, friendlyProdFromTarget, neutralCapturingSources, newReservations)
         -- end
 
-        return owned, shipDiff, friendlyProdFromTarget, neutralCapturingSources, newReservations, neutralCaptureDist
+        return owned, shipDiff, friendlyProdFromTarget, enemyProdFromTarget, neutralCapturingSources, newReservations, neutralCaptureDist
     end
 
     return MapFuture

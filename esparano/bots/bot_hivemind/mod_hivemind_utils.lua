@@ -5,13 +5,14 @@ require("mod_common_utils")
 require("mod_set")
  
 function getFullAttackData(map, mapTunnels, mapFuture, botUser, target, reservations, capturePlans)
-    local ownsPlanetAtEnd, shipDiff, friendlyProdFromTarget, capturingSources, newReservations, neutralCaptureDist = 
+    local ownsPlanetAtEnd, shipDiff, friendlyProdFromTarget, enemyProdFromTarget, capturingSources, newReservations, neutralCaptureDist = 
         mapFuture:simulateFullAttack(map, mapTunnels, botUser, target, reservations, capturePlans)
     return {
         target = target,
         ownsPlanetAtEnd = ownsPlanetAtEnd,
         shipDiff = shipDiff,
         friendlyProdFromTarget = friendlyProdFromTarget,
+        enemyProdFromTarget = enemyProdFromTarget,
         capturingSources = capturingSources,
         newReservations = newReservations,
         neutralCaptureDist = neutralCaptureDist,
@@ -39,7 +40,9 @@ function getPlanetDesc(map, botUser, neutral)
     local home = getHome(map, botUser)
     local enemyHome = getHome(map, map:getEnemyUser(botUser))
     local ownership = "My"
-    if game_utils.distance(enemyHome, neutral) < game_utils.distance(home, neutral) then 
+    if not home and not enemyHome then 
+        ownership = "Nobody's"
+    elseif not home or enemyHome and game_utils.distance(enemyHome, neutral) < game_utils.distance(home, neutral) then 
         ownership = "Their"
     end
     return ownership .. common_utils.round(neutral.ships)

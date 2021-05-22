@@ -53,17 +53,18 @@ end
 
 function initMinds(params) 
     local minds = {}
-     -- sets positive RoI planets as tunnelable. Should analyze earlier than most other minds.
+    -- Reserves ships for defense. Should analyze earlier than most other minds.
+    table.insert(minds, DefendMind.new(getOptsForMind("defend", params)))
+    -- Reserves ships from planned neutral captures. Should analyze earlier than most other minds.
     table.insert(minds, ExpandMind.new(getOptsForMind("expand", params)))
     table.insert(minds, AttackMind.new(getOptsForMind("attack", params)))
     -- table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", params)))
     -- table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", params)))
     -- table.insert(minds, ClusterControlMind.new(getOptsForMind("clustercontrol", params)))
     -- table.insert(minds, DefendRushMind.new(getOptsForMind("defendrush", params)))
-    table.insert(minds, DefendMind.new(getOptsForMind("defend", params)))
     -- table.insert(minds, EvenDistributionMind.new(getOptsForMind("evendistribution", params)))
-    table.insert(minds, ExploitEmptyMind.new(getOptsForMind("exploitempty", params)))
-    -- table.insert(minds, FeedFrontMind.new(getOptsForMind("feedfront", params)))
+    -- table.insert(minds, ExploitEmptyMind.new(getOptsForMind("exploitempty", params)))
+    table.insert(minds, FeedFrontMind.new(getOptsForMind("feedfront", params)))
     -- table.insert(minds, FleeTrickMind.new(getOptsForMind("fleetrick", params)))
     table.insert(minds, FloatMind.new(getOptsForMind("float", params)))
     table.insert(minds, MidRushMind.new(getOptsForMind("midrush", params)))
@@ -71,7 +72,7 @@ function initMinds(params)
     table.insert(minds, PassMind.new(getOptsForMind("pass", params)))
     -- table.insert(minds, PressureMind.new(getOptsForMind("pressure", params)))
     -- table.insert(minds, RedirectTrickMind.new(getOptsForMind("redirecttrick", params)))
-    table.insert(minds, RushMind.new(getOptsForMind("rush", params)))
+    -- table.insert(minds, RushMind.new(getOptsForMind("rush", params)))
     -- table.insert(minds, SurrenderMind.new(getOptsForMind("surrender", params)))
     -- table.insert(minds, SwapMind.new(getOptsForMind("swap", params)))
     -- table.insert(minds, TimerTrickMind.new(getOptsForMind("timertrick", params)))
@@ -105,6 +106,8 @@ function bot_hivemind(params, sb_stats)
             expand_targetCostWeight = 1,
             expand_ownedPlanetMaxShipLoss = 1,
             expand_negativeRoiReductionFactor = 1,
+            expand_overallWeight = 1,
+            expand_overallBias = 1,
             feedFront_frontWeightFrontProd = 1,
             feedFront_frontWeightFrontShips = 1,
             feedFront_frontWeightShipDiff = 1,
@@ -121,12 +124,44 @@ function bot_hivemind(params, sb_stats)
             feedFront_targetDistDiscountExponent = 1,
             feedFront_feedSendAmountWeight = 1,
             feedFront_feedDistWeight = 1,
-            feedFront_feedOverallWeight = 1,
+            feedFront_overallWeight = 1,
+            feedFront_overallBias = 1,
+            attack_nearbyCapturableProdProdExponent = 1,
+            attack_nearbyCapturableProdDistExponent = 1,
+            attack_nearbyCapturableProdDistIntercept = 1,
+            attack_nearbyUserProdProdExponent = 1,
+            attack_nearbyUserProdDistExponent = 1,
+            attack_nearbyUserProdDistIntercept = 1,
+            attack_nearbyUserShipsShipsExponent = 1,
+            attack_nearbyUserShipsDistExponent = 1,
+            attack_nearbyUserShipsDistIntercept = 1,
+            attack_naiveShipDiffWeight = 1,
+            attack_naiveProdDiffWeight = 1,
+            attack_nearbyProdDiffWeight = 1,
+            attack_targetProdWeight = 1,
+            attack_targetNearbyProdWeight = 1,
+            attack_delayCaptureWeight = 1,
+            attack_overcaptureIncomingShipsWeight = 1,
+            attack_overcapturedNearbyEnemyShipsWeight = 1,
+            attack_overcapturePenalty = 1,
+            attack_targetClusterWeight = 1,
+            attack_emptyClusterIntercept = 1,
+            attack_emptyClusterBonus = 1,
+            attack_frontShipDiffWeight = 1,
+            attack_targetShipDiffWeight = 1,
+            attack_distIntercept = 1,
+            attack_distWeight = 1,
+            attack_distExponent = 1,
+            attack_availableShipsExponent = 1,
+            attack_overallBias = 1,
+            attack_overallWeight = 1,
         },
         settings = {
             multiSelect = true,
         }
     }
+
+
     local OPTS = common_utils.mergeTableInto(defaultOptions, params.options or {})
 
     local MEM = params.memory
@@ -271,7 +306,7 @@ function getCombinedActions(actions, minds, multiSelect)
     end
 
     local iterations = 1
-    local MAX_ITERATIONS = 4
+    local MAX_ITERATIONS = 2
     while #newActions > 0 and iterations <= MAX_ITERATIONS do
         local nextNewActions = {}
 
@@ -298,7 +333,7 @@ function getCombinedActions(actions, minds, multiSelect)
 
         iterations = iterations + 1
     end
-    assert.is_true(iterations <= MAX_ITERATIONS, "WARNING: TOOK MORE THAN " .. MAX_ITERATIONS .. " to combine actions")
+    -- assert.is_true(iterations <= MAX_ITERATIONS, "WARNING: TOOK MORE THAN " .. MAX_ITERATIONS .. " to combine actions")
 
     return allActions
 end

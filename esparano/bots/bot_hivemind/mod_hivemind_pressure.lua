@@ -5,9 +5,12 @@ Grades based on pressure enemy feels? how to quantify this? how many ships enemy
 function _m_init()
     local PressureMind = {}
 
-    function PressureMind.new()
+    function PressureMind.new(params)
         local instance = {}
         for k, v in pairs(PressureMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

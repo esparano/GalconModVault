@@ -5,9 +5,12 @@ only suggests moves when really behind.
 function _m_init()
     local SurrenderMind = {}
 
-    function SurrenderMind.new()
+    function SurrenderMind.new(params)
         local instance = {}
         for k, v in pairs(SurrenderMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 

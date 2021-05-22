@@ -6,9 +6,12 @@ require("mod_hivemind_action")
 function _m_init()
     local EvenDistributionMind = {}
 
-    function EvenDistributionMind.new()
+    function EvenDistributionMind.new(params)
         local instance = {}
         for k, v in pairs(EvenDistributionMind) do
+            instance[k] = v
+        end
+        for k,v in pairs(params) do 
             instance[k] = v
         end
 
