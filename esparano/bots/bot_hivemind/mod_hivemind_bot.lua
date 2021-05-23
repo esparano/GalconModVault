@@ -269,7 +269,7 @@ function getMove(params, mem)
     -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
     -- Instead, the highest-priority move should track and apply its reservations and only then determine if the secondary action is compatible.
     -- TODO: THe way that moves with different percentages get combined, it may break "reservations" slightly.
-    candidates = getCombinedActions(candidates, minds, params.settings.multiSelect)
+    -- candidates = getCombinedActions(candidates, minds, params.settings.multiSelect)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
     table.sort(candidates, function (a, b) 

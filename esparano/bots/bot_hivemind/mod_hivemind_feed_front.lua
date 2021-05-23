@@ -28,13 +28,7 @@ function _m_init()
     function FeedFrontMind:suggestActions(plans)
         local candidates = {}
 
-        -- candidates = common_utils.combineLists(candidates, self:suggestSimpleFeedActions())
-
-        -- first, send high-priority feeds to save endangered front planets
-        candidates = common_utils.combineLists(candidates, self:suggestFeedEndangeredFronts(plans))
-
-        -- if ships are remaining, then send excess ships to fronts        
-        -- candidates = common_utils.combineLists(candidates, self:suggestFeedExcess())
+        candidates = common_utils.combineLists(candidates, self:suggestFeedFronts(plans))
 
         return candidates
     end
@@ -49,7 +43,12 @@ function _m_init()
     -- For each mini-map, attempt a max-efficiency multi-select tunnel, selecting % that sends most total (unreserved) ships to alias
     -- Grade priority based on total ships sent as well as
 
-    function FeedFrontMind:suggestFeedEndangeredFronts(plans)
+
+
+
+
+    -- for each source, suggest a (trainable) best front to feed
+    function FeedFrontMind:suggestFeedFronts(plans)
         local candidates = {}
         
         -- if we reserve ships to attack the neutral planet, will we lose a front planet in a full attack?
@@ -121,7 +120,7 @@ function _m_init()
 
     function FeedFrontMind:getBestFeedSource(nonFrontPlanets)
         local sourceDatas = {}
-        for i,p in ipairs(nonFrontPlanets) do 
+        for i,p in ipairs(nonFrontPlanets) do
             local shipsReserved = self.mapFuture:getReservations()[p.n] or 0
             local percent = getPercentToUseWithReservation(p, p.ships, shipsReserved)
             local amountSent = getAmountSent(p, percent)
@@ -190,53 +189,6 @@ function _m_init()
         end
 
         return weight
-    end
-
-    function FeedFrontMind:suggestSimpleFeedActions(action)
-        local candidates = {}
-
-        local enemyUser = self.map:getEnemyUser(self.botUser)
-        local enemyHome = self:getHome(self.map, enemyUser)
-
-        local sources = self.map:getPlanetList(self.botUser)
-        for i,source in ipairs(sources) do 
-            
-            local alias = self.mapTunnels:getTunnelAlias(source.n, enemyHome.n)
-            -- if feedAlias.owner ~= enemyUser.n then 
-
-            local reservations = self.mapFuture:getReservations()[source.n] or 0
-            local percentReserved = 0
-            if reservations > 0 then
-                percentReserved = game_utils.percentToUse(source, reservations)
-            end
-            -- make sure not to send more than 'reservations' can afford, and also make sure that the amount to send is at least 5%
-            local percentToUse = 100 - percentReserved
-            if percentToUse >= 5 then 
-                local desc = "Feed@EHome"
-                local initialPriority = self:getBasicFeedPriority(source, percentToUse, alias, enemyHome, self.mapTunnels)
-
-                -- no plan because this is not a multi-turn action
-                local action = Action.newSend(initialPriority, self, desc, {}, {source}, alias, percentToUse)
-                table.insert(candidates, action)
-            end
-        end
-
-        return candidates
-    end
-
-    -- introduce various nonlinearities 
-    function FeedFrontMind:getBasicFeedPriority(source, percentToUse, alias, target)
-        local amountToSend = source.ships * percentToUse / 100
-
-        local distToTarget = self.mapTunnels:getSimplifiedTunnelDist(source.n, target.n)
-
-        local initialPriority = self.basicFeedFrontSendAmountWeight * amountToSend / 5 + self.basicFeedFrontDistWeight * distToTarget / 300 
-        initialPriority = initialPriority * self.basicFeedFrontOverallWeight
-        return initialPriority
-    end
-
-    function FeedFrontMind:getHome(user)
-        return common_utils.find(self.map:getPlanetList(user.n), function(p) return p.production end)
     end
 
     return FeedFrontMind
