@@ -147,19 +147,25 @@ function _module_init()
         return estimatedRealDistance(source, target, numShipsSent, costOverride) + congestionCorrection
     end
 
-    -- TODO: would be better to use grid-based precalculation approach rather than recalculating as needed.
-    function MapTunnels:getApproxFleetTunnelDist(fleetId, targetId)
+    function MapTunnels:getApproxFleetDirectDist(fleetId, targetId)
         local fleet = self.items[fleetId]
+        targetId = targetId or fleet.target
         local target = self.items[targetId]
 
         -- Fleet's "realDistance" plus an approximation of congestion corrections for a direct flight to "target".
-        local bestDist = (1 + self.data.avgCongestionCorrectionPerDist) * estimatedRealDistance(fleet, target, fleet.ships, fleet.ships/2)
+        return (1 + self.data.avgCongestionCorrectionPerDist) * estimatedRealDistance(fleet, target, fleet.ships, fleet.ships/2)
+    end
+
+    -- TODO: would be better to use grid-based precalculation approach rather than recalculating as needed.
+    function MapTunnels:getApproxFleetTunnelDist(fleetId, targetId)
+        -- Fleet's "realDistance" plus an approximation of congestion corrections for a direct flight to "target".
+        local bestDist = self:getApproxFleetDirectDist(fleetId, targetId)
         
         -- test if it's better to land fleet nearby and then tunnel to target
         for aliasId,_ in pairs(self.data.planetInfo) do
             local alias = self.items[aliasId]
             if not alias.neutral then 
-                local distToAlias = (1 + self.data.avgCongestionCorrectionPerDist) * estimatedRealDistance(fleet, alias, fleet.ships, fleet.ships/2)
+                local distToAlias = self:getApproxFleetDirectDist(fleetId, aliasId)
                 local totalTunnelDist = distToAlias + self:getSimplifiedTunnelDist(aliasId, targetId)
                 if totalTunnelDist < bestDist then 
                     bestDist = totalTunnelDist
