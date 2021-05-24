@@ -61,7 +61,12 @@ function _m_init()
 
     function ElitistPopulation:getFittestChromosome()
         return common_utils.find(self.chromosomes, function (o) 
-            if o.fitness ~= nil then return o.fitness else return -math.huge end
+            if o.fitness ~= nil then 
+                return o.fitness 
+            else 
+                return -math.huge 
+            end
+        end
         )
     end
 
