@@ -1,5 +1,6 @@
 require("mod_memoize")
 require("mod_common_utils")
+require("mod_game_utils")
 
 -- TODO: documentation
 -- Precalculates things for speeding up future calculations
@@ -19,11 +20,6 @@ function _module_init()
         "getEnemyPlanetList",
         "getEnemyPlanetAndFleetList"
     }
-
-    local function toUserId(user)
-        if type(user) == "number" then return user end
-        return user.n
-    end
 
     -- return a clone of this map
     function Map.copy(map)
@@ -65,7 +61,7 @@ function _module_init()
 
     -- TODO: refactor searching for planets/users/etc.
     function Map:getPlanetList(ownerId)
-        if ownerId then ownerId = toUserId(ownerId) end
+        if ownerId then ownerId = game_utils.toId(ownerId) end
         return common_utils.filter(
             self._items,
             function(item)
@@ -75,7 +71,7 @@ function _module_init()
     end
 
     function Map:getFleetList(ownerId)
-        if ownerId then ownerId = toUserId(ownerId) end
+        if ownerId then ownerId = game_utils.toId(ownerId) end
         return common_utils.filter(
             self._items,
             function(item)
@@ -86,7 +82,7 @@ function _module_init()
 
     -- TODO: test
     function Map:getNonNeutralPlanetAndFleetList(ownerId)
-        if ownerId then ownerId = toUserId(ownerId) end
+        if ownerId then ownerId = game_utils.toId(ownerId) end
         return common_utils.filter(
             self._items,
             function(item)
@@ -97,7 +93,7 @@ function _module_init()
 
     -- TODO: test
     function Map:getPlanetAndFleetList(ownerId)
-        if ownerId then ownerId = toUserId(ownerId) end
+        if ownerId then ownerId = game_utils.toId(ownerId) end
         return common_utils.filter(
             self._items,
             function(item)
@@ -119,7 +115,7 @@ function _module_init()
     end
 
     function Map:getEnemyUser(userId)
-        if userId then userId = toUserId(userId) end
+        if userId then userId = game_utils.toId(userId) end
         local users = self:getUserList(false)
         for _, u in ipairs(users) do
             if u.n ~= userId then

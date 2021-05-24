@@ -38,13 +38,13 @@ function test_totalShips_ownerId_memoization()
     local users = m:getUserList()
     local total = 0
     for _, u in ipairs(users) do
-        total = total + m:totalShips(u.n)
+        total = total + m:totalShips(u)
     end
     assert.equals_epsilon(m:totalShips(), total)
     assert.equals(4, p:getN(m, "getPlanetAndFleetList"))
 
     for _, u in pairs(users) do
-        total = total + m:totalShips(u.n)
+        total = total + m:totalShips(u)
     end
     m:totalShips()
     assert.equals(4, p:getN(m, "getPlanetAndFleetList"))
@@ -54,13 +54,13 @@ function test_totalProd_ownerId_memoization()
     local users = m:getUserList()
     local total = 0
     for _, u in ipairs(users) do
-        total = total + m:totalProd(u.n)
+        total = total + m:totalProd(u)
     end
     assert.equals_epsilon(m:totalProd(), total)
     assert.equals(4, p:getN(m, "getPlanetList"))
 
     for _, u in pairs(users) do
-        total = total + m:totalProd(u.n)
+        total = total + m:totalProd(u)
     end
     m:totalProd()
     assert.equals(4, p:getN(m, "getPlanetList"))

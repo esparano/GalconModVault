@@ -22,14 +22,14 @@ function isPlanetSafeFromFullAttack(map, mapTunnels, user)
 end
 
 function getHome(map, mapTunnels, user)
-    return common_utils.find(map:getPlanetList(user.n), function(p) return p.production end)
+    return common_utils.find(map:getPlanetList(user), function(p) return p.production end)
 end
 
 function getHomesDistance(map, mapTunnels)
     local users = map:getUserList(false)
     local h1 = getHome(map, mapTunnels, users[1])
     local h2 = getHome(map, mapTunnels, users[2])
-    return mapTunnels:getSimplifiedTunnelDist(h1.n, h2.n)
+    return mapTunnels:getSimplifiedTunnelDist(h1, h2)
 end
 
 function getPositiveRoiNeutralData(map, mapTunnels, user, neutrals)
@@ -38,7 +38,7 @@ function getPositiveRoiNeutralData(map, mapTunnels, user, neutrals)
 
     local neutralROIs = {}
     for _, p in pairs(neutrals) do
-        local distDifference = mapTunnels:getSimplifiedTunnelDist(enemyHome.n, p.n) - mapTunnels:getSimplifiedTunnelDist(home.n, p.n)
+        local distDifference = mapTunnels:getSimplifiedTunnelDist(enemyHome, p) - mapTunnels:getSimplifiedTunnelDist(home, p)
         local prodTime = game_utils.distToTravelTime(distDifference)
 
         -- planet should be closer to player than enemy
@@ -66,7 +66,7 @@ end
 -- TODO: this should copy mapTunnels instead of modifying permanently?
 -- TODO: limit to number of ships that player actually has? (Repeat while total estimated return on investment before enemy arrival is > 0?)
 function identifyHighestRoiNeutral(map, mapTunnels, user)
-    local notTunnelablePlanets = common_utils.filter(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p.n) end)
+    local notTunnelablePlanets = common_utils.filter(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p) end)
     local positiveRoiNeutralData = getPositiveRoiNeutralData(map, mapTunnels, user, notTunnelablePlanets)
     if #positiveRoiNeutralData > 0 then 
         local bestPositiveRoiNeutral = positiveRoiNeutralData[1].target
@@ -102,7 +102,7 @@ function getFrontPlanets(map, mapTunnels, user, friendlyPlannedCapturesSet, enem
     local friendlyPlanets = common_utils.filter(map:getPlanetList(), 
         function (p) return p.owner == user.n or friendlyPlannedCapturesSet:contains(p.n) end
     )
-    local enemyUser = map:getEnemyUser(user.n)
+    local enemyUser = map:getEnemyUser(user)
     local enemyPlanets = common_utils.filter(map:getPlanetList(), 
         function (p) return p.owner == enemyUser.n or enemyPlannedCapturesSet:contains(p.n) end
     )
@@ -110,10 +110,10 @@ function getFrontPlanets(map, mapTunnels, user, friendlyPlannedCapturesSet, enem
         function (source)
             local closestEnemyPlanet = common_utils.find(enemyPlanets,
                 function (target) 
-                    return - mapTunnels:getSimplifiedTunnelDist(source.n, target.n) 
+                    return - mapTunnels:getSimplifiedTunnelDist(source, target) 
                 end
             )
-            return closestEnemyPlanet ~= nil and mapTunnels:getTunnelAlias(source.n, closestEnemyPlanet.n).n == closestEnemyPlanet.n
+            return closestEnemyPlanet ~= nil and mapTunnels:getTunnelAlias(source, closestEnemyPlanet).n == closestEnemyPlanet.n
         end
     )
 end
@@ -191,7 +191,7 @@ function simulatedRushSucceeds(map, mapTunnels, defendingTarget, defendingPlanet
         table.insert(allPlanets, {p = p, friendly = false})
     end
     table.sort(allPlanets, function (a, b) 
-        return mapTunnels:getSimplifiedTunnelDist(a.p.n, defendingTarget.n) < mapTunnels:getSimplifiedTunnelDist(b.p.n, defendingTarget.n)
+        return mapTunnels:getSimplifiedTunnelDist(a.p, defendingTarget) < mapTunnels:getSimplifiedTunnelDist(b.p, defendingTarget)
     end)
     print(allPlanets[1].p.ships)
 
@@ -228,7 +228,7 @@ end
 
 function getClosestTarget(mapTunnels, source, targets)
     return common_utils.find(targets, function (target)
-        return -mapTunnels:getSimplifiedTunnelDist(source.n, target.n) 
+        return -mapTunnels:getSimplifiedTunnelDist(source, target) 
     end)
 end
 
@@ -243,7 +243,7 @@ function getAssaultProdContributions(mapTunnels, sources, target, horizon)
 end
 
 function getAssaultSinglePlanetProdContribution(mapTunnels, source, target, horizon)
-    local tunnelDist = mapTunnels:getSimplifiedTunnelDist(source.n, target.n)
+    local tunnelDist = mapTunnels:getSimplifiedTunnelDist(source, target)
     local prodTime = horizon - game_utils.distToTravelTime(tunnelDist)
     if prodTime < 0 then 
         print("WARNING: production time was negative for AssaultProdContribution of planet " .. source.ships)
@@ -284,7 +284,7 @@ function bot_greed(params, sb_stats)
         print("ERROR: Match is either FFA or there is no enemy. Skipping turn. #users = " .. #users)
         return
     end
-    local enemyUser = map:getEnemyUser(botUser.n)
+    local enemyUser = map:getEnemyUser(botUser)
 
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
     mapTunnels = MapTunnels.new(ITEMS, MEM.mapTunnelsData)
@@ -363,7 +363,7 @@ function bot_greed(params, sb_stats)
     local ticks, alloc = sb_stats()
     print("ticks, alloc = " .. ticks .. " , " .. alloc)
 
-    local tunnelAlias = mapTunnels:getTunnelAlias(from.n, to.n)
+    local tunnelAlias = mapTunnels:getTunnelAlias(from, to)
     -- by using a table for from, you can send from multiple planets and fleets
     return {percent = OPTS.percent, from = {from.n}, to = tunnelAlias.n}
 end
@@ -381,7 +381,7 @@ function debugDrawTunnels(botUser, map, mapTunnels, owner, targets)
     for i,source in ipairs(map:getPlanetList(owner)) do 
         local closestTarget = getClosestTarget(mapTunnels, source, targets)
         if closestTarget ~= nil and source.n ~= closestTarget.n then
-            local tunnelAlias = mapTunnels:getTunnelAlias(source.n, closestTarget.n)
+            local tunnelAlias = mapTunnels:getTunnelAlias(source, closestTarget)
             table.insert(tunnelPairs, {source = source, target = tunnelAlias})
         end
     end

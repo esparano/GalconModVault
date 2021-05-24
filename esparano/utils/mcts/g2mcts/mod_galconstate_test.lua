@@ -32,7 +32,7 @@ end
 
 function test_doApplyAction()
     local from = map:getPlanetList(agent._n)[1]
-    local to = map:getPlanetList(map:getNeutralUser().n)[1]
+    local to = map:getPlanetList(map:getNeutralUser())[1]
     local action = "s," .. from.n .. "," .. to.n .. ",100"
     state:_doApplyAction(action)
     assert.equals(0, from.ships)

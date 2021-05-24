@@ -54,7 +54,7 @@ end
 
 -- TODO: this is really an approximation. A bit hacky
 function getHome(map, user)
-    return common_utils.find(map:getPlanetList(user.n), function(p) return p.production end)
+    return common_utils.find(map:getPlanetList(user), function(p) return p.production end)
 end
 
 function debugDrawTunnels(botUser, map, mapTunnels, owner, targets)
@@ -62,7 +62,7 @@ function debugDrawTunnels(botUser, map, mapTunnels, owner, targets)
     for i,source in ipairs(map:getPlanetList(owner)) do 
         local closestTarget = getClosestTarget(mapTunnels, source, targets)
         if closestTarget ~= nil and source.n ~= closestTarget.n then
-            local tunnelAlias = mapTunnels:getTunnelAlias(source.n, closestTarget.n)
+            local tunnelAlias = mapTunnels:getTunnelAlias(source, closestTarget)
             table.insert(tunnelPairs, {source = source, target = tunnelAlias})
         end
     end

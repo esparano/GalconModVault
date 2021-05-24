@@ -68,7 +68,7 @@ function _m_init()
                         local initialPriority = self:getInitialPriority(front, availableShips, friendlyFrontFullAttacks[i], friendlyFrontNearbyFriendlyProds[i], 
                             enemyFront, enemyFrontFullAttacks[j], enemyFrontNearbyEnemyProds[j], enemyFrontNearbyCapturableProds[j], enemyFrontNearbyEnemyShips[j])
                         
-                        local alias = self.mapTunnels:getTunnelAlias(front.n, enemyFront.n)
+                        local alias = self.mapTunnels:getTunnelAlias(front, enemyFront)
                         local desc = "Attack@" .. getPlanetDesc(self.map, self.botUser, enemyFront)
                         local action = Action.newSend(initialPriority, self, desc, {}, {front}, alias, percent)
                         table.insert(candidates, action)
@@ -111,7 +111,7 @@ function _m_init()
         priority = priority + self.frontShipDiffWeight * frontFullAttack.shipDiff +  self.targetShipDiffWeight * targetFullAttack.shipDiff
 
         -- positive priority is a function of distance...
-        local dist = self.mapTunnels:getSimplifiedTunnelDist(front.n, target.n)
+        local dist = self.mapTunnels:getSimplifiedTunnelDist(front, target)
         priority = priority / (5 * self.distIntercept + self.distWeight * dist ^ (self.distExponent))
 
         priority = priority * availableShips ^ self.availableShipsExponent
@@ -126,7 +126,7 @@ function _m_init()
         local total = 0
         for i,p in ipairs(planets) do
             if not p.neutral and p.n ~= target.n then 
-                local dist = self.mapTunnels:getSimplifiedTunnelDist(target.n, p.n)
+                local dist = self.mapTunnels:getSimplifiedTunnelDist(target, p)
                 total = total + 50 * (p.production ^ self.nearbyCapturableProdProdExponent) / ((dist + 5 * self.nearbyCapturableProdDistIntercept) ^ self.nearbyCapturableProdDistExponent)
             end
         end
@@ -138,7 +138,7 @@ function _m_init()
         local total = 0
         for i,p in ipairs(planets) do
             if p.n ~= target.n then 
-                local dist = self.mapTunnels:getSimplifiedTunnelDist(target.n, p.n)
+                local dist = self.mapTunnels:getSimplifiedTunnelDist(target, p)
                 total = total + 50 * (p.production ^ self.nearbyUserProdProdExponent) / ((dist + 5 * self.nearbyUserProdDistIntercept) ^ self.nearbyUserProdDistExponent)
             end
         end
@@ -150,7 +150,7 @@ function _m_init()
         local total = 0
         for i,p in ipairs(planets) do
             if p.n ~= target.n then 
-                local dist = self.mapTunnels:getSimplifiedTunnelDist(target.n, p.n)
+                local dist = self.mapTunnels:getSimplifiedTunnelDist(target, p)
                 total = total + 50 * (p.ships ^ self.nearbyUserShipsShipsExponent) / ((dist + 5 * self.nearbyUserShipsDistIntercept) ^ self.nearbyUserShipsDistExponent)
             end
         end

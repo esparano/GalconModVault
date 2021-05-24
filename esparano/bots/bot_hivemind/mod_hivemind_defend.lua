@@ -70,7 +70,7 @@ function _m_init()
     function DefendMind:getAmountToReserve(attackingFleet, target, desiredReservation, additionalReservations)
         if target.owner ~= self.botUser.n then return 0, desiredReservation end
 
-        local fleetDirectDist = self.mapTunnels:getApproxFleetDirectDist(attackingFleet.n, target.n)
+        local fleetDirectDist = self.mapTunnels:getApproxFleetDirectDist(attackingFleet, target)
         local prodTime = game_utils.distToTravelTime(fleetDirectDist)
         local producedDuringFlight = game_utils.calcShipsProducedNonNeutral(target, prodTime)
         

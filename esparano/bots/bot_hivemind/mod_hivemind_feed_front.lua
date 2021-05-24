@@ -80,7 +80,7 @@ function _m_init()
             end
     
             local initialPriority = self:getFeedPriority(sourceInfo, targetInfo)
-            local alias = self.mapTunnels:getTunnelAlias(sourceInfo.p.n, targetInfo.p.n)
+            local alias = self.mapTunnels:getTunnelAlias(sourceInfo.p, targetInfo.p)
             local desc = "Feed@" .. getPlanetDesc(self.map, self.botUser, targetInfo.p)
             -- no plan because this is not a multi-turn action
             local action = Action.newSend(initialPriority, self, desc, {}, {sourceInfo.p}, alias, sourceInfo.percent)
@@ -105,7 +105,7 @@ function _m_init()
         local frontWeights = self:getDesiredFrontWeights(frontPlanets)
         
         local targetDatas = common_utils.map(frontPlanets, function(front)
-            local dist = self.mapTunnels:getSimplifiedTunnelDist(source.n, front.n)
+            local dist = self.mapTunnels:getSimplifiedTunnelDist(source, front)
             local weight = frontWeights[front] ^ self.targetWeightExponent / dist ^ self.targetDistExponent 
                 - dist ^ self.targetDistDiscountExponent * self.targetDistDiscount / 100000
             return {
@@ -173,9 +173,9 @@ function _m_init()
             -- avoid divide by zero errors
             local dist
             if enemy.is_fleet then 
-                dist = self.mapTunnels:getApproxFleetTunnelDist(enemy.n, front.n)
+                dist = self.mapTunnels:getApproxFleetTunnelDist(enemy, front)
             else
-                dist = self.mapTunnels:getSimplifiedTunnelDist(enemy.n, front.n)
+                dist = self.mapTunnels:getSimplifiedTunnelDist(enemy, front)
             end
             local distToEnemy = math.max(5, dist - 5 * self.frontWeightEnemyDistIntercept)
             local production = enemy.production or 0

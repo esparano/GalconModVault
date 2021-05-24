@@ -181,7 +181,7 @@ function bot_hivemind(params, sb_stats)
         print("ERROR: Match is either FFA or there is no enemy. Skipping turn. #users = " .. #users)
         return
     end
-    local enemyUser = map:getEnemyUser(botUser.n)
+    local enemyUser = map:getEnemyUser(botUser)
 
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
     MEM.plans = MEM.plans or {}

@@ -130,17 +130,20 @@ function _module_init()
         end
     end
 
-    function MapTunnels:setTunnelable(source)
-        if self.data.planetInfo[source.n].tunnelable then
+    function MapTunnels:setTunnelable(sourceId)
+        sourceId = game_utils.toId(sourceId)
+        if self.data.planetInfo[sourceId].tunnelable then
             return
         end
 
-        self.data.planetInfo[source.n].tunnelable = true
-        self:updateTunnels(source)
+        self.data.planetInfo[sourceId].tunnelable = true
+        self:_updateTunnels(sourceId)
     end
 
     -- TODO: this precalculated congestionCorrectedDistance makes assumptions that IGNORE the passed in numShipsSent/costOverride
     function MapTunnels:getCongestionCorrectedDistance(sourceId, targetId, numShipsSent, costOverride)
+        sourceId = game_utils.toId(sourceId)
+        targetId = game_utils.toId(targetId)
         local source = self.items[sourceId]
         local target = self.items[targetId]
         local congestionCorrection = self.data.congestionCorrections[sourceId][targetId]
@@ -148,8 +151,11 @@ function _module_init()
     end
 
     function MapTunnels:getApproxFleetDirectDist(fleetId, targetId)
+        fleetId = game_utils.toId(fleetId)
         local fleet = self.items[fleetId]
+
         targetId = targetId or fleet.target
+        targetId = game_utils.toId(targetId)
         local target = self.items[targetId]
 
         -- Fleet's "realDistance" plus an approximation of congestion corrections for a direct flight to "target".
@@ -158,6 +164,8 @@ function _module_init()
 
     -- TODO: would be better to use grid-based precalculation approach rather than recalculating as needed.
     function MapTunnels:getApproxFleetTunnelDist(fleetId, targetId)
+        fleetId = game_utils.toId(fleetId)
+        targetId = game_utils.toId(targetId)
         -- Fleet's "realDistance" plus an approximation of congestion corrections for a direct flight to "target".
         local bestDist = self:getApproxFleetDirectDist(fleetId, targetId)
         
@@ -177,6 +185,8 @@ function _module_init()
     end
 
     function MapTunnels:getTunnelDist(sourceId, targetId, numShipsSent, costOverride)
+        sourceId = game_utils.toId(sourceId)
+        targetId = game_utils.toId(targetId)
         numShipsSent = numShipsSent or DEFAULT_TUNNEL_SHIPS_SENT
 
         local sum = 0
@@ -192,6 +202,8 @@ function _module_init()
 
     -- assuming DEFAULT_TUNNEL_SHIPS_SENT at a time are sent through friendly planets
     function MapTunnels:getSimplifiedTunnelDist(sourceId, targetId)
+        sourceId = game_utils.toId(sourceId)
+        targetId = game_utils.toId(targetId)
         if not self.data.tunnelInfo[sourceId][targetId].tunnelDist then
             self.data.tunnelInfo[sourceId][targetId].tunnelDist = self:getTunnelDist(sourceId, targetId, DEFAULT_TUNNEL_SHIPS_SENT, 0)
         end
@@ -208,7 +220,8 @@ function _module_init()
 
     -- updates all existing tunnels to consider the candidate as an alias
     -- This calculation is repeated until convergence because updating one tunnel may affect other tunnels that pass through the same planets
-    function MapTunnels:updateTunnels(aliasCandidate)
+    function MapTunnels:_updateTunnels(aliasCandidateId)
+        aliasCandidateId = game_utils.toId(aliasCandidateId)
         local converged = false
         local iterations = 0
         while not converged do 
@@ -218,9 +231,9 @@ function _module_init()
             -- get pairs of source/target and sort by increasing current tunnelDistance
             local sortedPairs = {}
             for sourceId,s in pairs(self.data.tunnelInfo) do
-                if aliasCandidate.n ~= sourceId then 
+                if aliasCandidateId ~= sourceId then 
                     for targetId,_ in pairs(s) do
-                        if aliasCandidate.n ~= targetId then
+                        if aliasCandidateId ~= targetId then
                             table.insert(sortedPairs, {sourceId = sourceId, targetId = targetId})
                         end
                     end
@@ -235,15 +248,15 @@ function _module_init()
                 local targetId = p.targetId
                 local tunnelInfo = self.data.tunnelInfo[sourceId][targetId]
                 -- is going DIRECTLY to candidate better (NOT tunneling to candidate first)?
-                local sourceToCandidateDist = self:getCongestionCorrectedDistance(sourceId, aliasCandidate.n, DEFAULT_TUNNEL_SHIPS_SENT, 0)
+                local sourceToCandidateDist = self:getCongestionCorrectedDistance(sourceId, aliasCandidateId, DEFAULT_TUNNEL_SHIPS_SENT, 0)
 
                 local currentTunnelDist = self:getSimplifiedTunnelDist(sourceId, targetId)
-                local candidateToTargetTunnelDist = self:getSimplifiedTunnelDist(aliasCandidate.n, targetId)
+                local candidateToTargetTunnelDist = self:getSimplifiedTunnelDist(aliasCandidateId, targetId)
 
                 -- if "candidateAlias" is a faster way to get to "alias", then 
                 -- only update if more than 1 distance unit faster, to avoid floating point errors leading to infinite loops.
                 if common_utils.toPrecision(sourceToCandidateDist + candidateToTargetTunnelDist, 1) < common_utils.toPrecision(currentTunnelDist, 1) then 
-                    tunnelInfo.aliasId = aliasCandidate.n
+                    tunnelInfo.aliasId = aliasCandidateId
                     -- other tunnels may be affected by this, causing a cascade of recalculations to be necessary
                     self:invalidateTunnelDists()
                     tunnelInfo.tunnelDist = sourceToCandidateDist + candidateToTargetTunnelDist
@@ -259,37 +272,41 @@ function _module_init()
     end
 
     function MapTunnels:getTunnelAlias(sourceId, targetId) 
+        sourceId = game_utils.toId(sourceId)
+        targetId = game_utils.toId(targetId)
         return self.items[self.data.tunnelInfo[sourceId][targetId].aliasId]
     end
 
     function MapTunnels:isTunnelable(planetId)
+        planetId = game_utils.toId(planetId)
         return self.data.planetInfo[planetId].tunnelable 
     end
 
     -- a "front" planet is any "owned" (or planned-to-be-captured) planet that does not need to tunnel to attack its closest enemy planet
     -- will return empty list if there are no enemy planets
-    function MapTunnels:getFrontPlanets(user, friendlyPlannedCapturesSet, enemyPlannedCapturesSet)
+    function MapTunnels:getFrontPlanets(userId, friendlyPlannedCapturesSet, enemyPlannedCapturesSet)
+        userId = game_utils.toId(userId)
         friendlyPlannedCapturesSet = friendlyPlannedCapturesSet or Set.new()
         enemyPlannedCapturesSet = enemyPlannedCapturesSet or Set.new()
 
         local friendlyPlanets = common_utils.filter(self.data.planetInfo, 
             function (info) 
                 local p = self.items[info.n]
-                return p.owner == user.n or friendlyPlannedCapturesSet:contains(info.n) 
+                return p.owner == userId or friendlyPlannedCapturesSet:contains(info.n) 
             end
         )
         local enemyPlanets = common_utils.filter(self.data.planetInfo,
             function (info)
                 local p = self.items[info.n]
-                return (p.owner ~= user.n and not p.neutral) or enemyPlannedCapturesSet:contains(info.n) 
+                return (p.owner ~= userId and not p.neutral) or enemyPlannedCapturesSet:contains(info.n) 
             end
         )
         local resultInfos = common_utils.filter(friendlyPlanets,
             function (sourceInfo)
                 for i,enemyInfo in ipairs(enemyPlanets) do
-                    local alias = self:getTunnelAlias(sourceInfo.n, enemyInfo.n)
+                    local alias = self:getTunnelAlias(sourceInfo, enemyInfo)
                     -- print("from " .. self.items[sourceInfo.n].ships .. " to " .. self.items[enemyInfo.n].ships .. " alias " .. alias.ships)
-                    if alias.owner ~= user.n and not friendlyPlannedCapturesSet:contains(alias.n) then return true end 
+                    if alias.owner ~= userId and not friendlyPlannedCapturesSet:contains(alias.n) then return true end 
                 end
                 return false 
             end

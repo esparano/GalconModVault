@@ -108,7 +108,7 @@ function _sandbox_init(_ENV) -- ignore -------------------------------------
         if shouldTunnel then 
             MEM.mapData = MEM.mapData or {}
             map = Map.new(G, MEM.mapData)
-            to = map:getTunnelAlias(from.n, to.n)
+            to = map:getTunnelAlias(from, to)
         end
 
         -- by using a table for from, you can send from multiple planets and fleets

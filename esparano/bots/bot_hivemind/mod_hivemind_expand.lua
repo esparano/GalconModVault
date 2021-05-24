@@ -108,7 +108,7 @@ function _m_init()
             local capturingSource = data.capturingSources[#data.capturingSources]
             -- if there are no capturingSources, this means prod captured, not a friendly source.
             if #data.capturingSources > 0 and capturingSource.is_planet then
-                local sourceCaptureDist = self.mapTunnels:getSimplifiedTunnelDist(capturingSource.n, data.target.n)
+                local sourceCaptureDist = self.mapTunnels:getSimplifiedTunnelDist(capturingSource, data.target)
                 -- only send if this is the final planet that actually captures the neutral AND the neutral wasn't simply captured later by future prod!
                 if sourceCaptureDist == data.neutralCaptureDist then 
                     -- TODO: This just gets the last friendly planet before capture, even if we need to wait for more production to help capture. 
@@ -240,9 +240,9 @@ function _m_init()
         end
         assert.is_true(target.neutral, "target was not neutral!!")
         local updatedMapTunnels = common_utils.copy(self.mapTunnels)
-        assert.is_false(updatedMapTunnels:isTunnelable(neutralAttackData.target.n), "planet should not be tunnelable at this point!")
+        assert.is_false(updatedMapTunnels:isTunnelable(neutralAttackData.target), "planet should not be tunnelable at this point!")
         updatedMapTunnels:setTunnelable(neutralAttackData.target)
-        assert.is_false(self.mapTunnels:isTunnelable(neutralAttackData.target.n), "updating hypothetical mapTunnels updated real mapTunnels!")
+        assert.is_false(self.mapTunnels:isTunnelable(neutralAttackData.target), "updating hypothetical mapTunnels updated real mapTunnels!")
 
         local friendlyPlannedCapturesSet = Set.new({neutralAttackData.target.n})
         local frontPlanets = updatedMapTunnels:getFrontPlanets(self.botUser, friendlyPlannedCapturesSet)
@@ -253,16 +253,16 @@ function _m_init()
         -- if we reserve ships to attack the neutral planet, will we lose a front planet in a full attack?
         for i,p in ipairs(frontPlanets) do
             -- if the neutral IS a front planet, don't full-attack-test it a second time.
-            if p.n ~= neutralAttackData.target.n then 
+            if p.n ~= neutralAttackData.target.n then
                 local frontAttackData = self:getFullAttackData(p, updatedMapTunnels, totalReservations, plansIncludingNeutral)
                 -- TODO: this could be overly cautious. Sometimes you still want to expand despite not owning a planet at the end, \
                 -- for example, if the prod gained by the neutral is greater than the sum of lost prod from lost front planets.
-                if not frontAttackData.ownsPlanetAtEnd then 
+                if not frontAttackData.ownsPlanetAtEnd then
                     local neutralDesc = self:getPlanetDesc(neutralAttackData.target)
                     local frontDesc = self:getPlanetDesc(frontAttackData.target)
                     -- print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
                     return false
-                end 
+                end
             end
         end
 

@@ -68,11 +68,13 @@ function _module_init()
         end
     end
 
-    function MapFuture:getPlannedCaptureSources(capturePlans, map, excludeTarget)
+    -- TODO: add pseudo sources as simply neutral ships with prod before capture time completely reserved!
+    function MapFuture:getPlannedCaptureSources(capturePlans, map, excludeTargetId)
+        excludeTargetId = game_utils.toId(excludeTargetId)
         local pseudoSources = {}
         for i,p in ipairs(capturePlans) do 
             -- production and cost of neutral excludeTarget is already handled implicitly by simulateFullAttack
-            if excludeTarget.n ~= p.data.targetN then
+            if excludeTargetId ~= p.data.targetN then
                 local target = map._items[p.data.targetN]
                 assert.is_true(target.neutral)
                 table.insert(pseudoSources, {
@@ -83,6 +85,7 @@ function _module_init()
             else
                 print('SUCCESSFULLY FILTERED!!!')
                 print("capture plans: " .. common_utils.dump(capturePlans))
+                local excludeTarget = map._items[excludeTargetId]
                 print("excludeTarget: " .. excludeTarget.ships)
                 -- print("pseudoSources: " .. common_utils.dump(pseudoSources))
             end
@@ -91,7 +94,7 @@ function _module_init()
         return pseudoSources
     end
 
-    function MapFuture:isTargetPlannedCapture(fleet, capturePlans)
+    function MapFuture:_isTargetPlannedCapture(fleet, capturePlans)
         return common_utils.findFirst(capturePlans, function(p) return p.data.targetN == fleet.target end) ~= nil
     end
 
@@ -101,8 +104,10 @@ function _module_init()
     --  negative shipDiff indicates planet was overcome
     --  positive shipDiff but owned = false indicates enemy presence was too strong to capture
     --  positive shipDiff and owned = true indicates that the defense succeeded by "shipDiff" ships
-    function MapFuture:simulateFullAttack(map, mapTunnels, capturingUser, target, reservations, capturePlans)
+    function MapFuture:simulateFullAttack(map, mapTunnels, capturingUser, targetId, reservations, capturePlans)
         reservations = reservations or self.reservations
+        targetId = game_utils.toId(targetId)
+        local target = map._items[targetId]
         capturePlans = capturePlans or {}
 
         -- sort both fleets and planets by tunnel distance to target
@@ -114,14 +119,14 @@ function _module_init()
             if o.is_fleet then
                 -- ALWAYS allow enemy to redirect
                 -- if a friendly fleet is not headed towards a planned capture, it can redirect if it wants
-                if o.owner ~= capturingUser.n or (map._items[o.target].neutral and not self:isTargetPlannedCapture(o, capturePlans)) then
+                if o.owner ~= capturingUser.n or (map._items[o.target].neutral and not self:_isTargetPlannedCapture(o, capturePlans)) then
                     -- TODO: discretize into 1/4 second increment buckets?
-                    data.dist = mapTunnels:getApproxFleetTunnelDist(o.n, target.n)
+                    data.dist = mapTunnels:getApproxFleetTunnelDist(o, target)
                 else
-                    data.dist = mapTunnels:getApproxFleetTunnelDist(o.n, o.target) + mapTunnels:getSimplifiedTunnelDist(o.target, target.n)
+                    data.dist = mapTunnels:getApproxFleetTunnelDist(o, o.target) + mapTunnels:getSimplifiedTunnelDist(o.target, target)
                 end
             else
-                data.dist = mapTunnels:getSimplifiedTunnelDist(o.n, target.n)
+                data.dist = mapTunnels:getSimplifiedTunnelDist(o, target)
             end
             return data
         end)

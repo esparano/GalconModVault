@@ -25,7 +25,7 @@ function before_each()
     map = Map.new(items)
     user = map:getUserList(false)[1]
     assert.not_nil(user)
-    home = map:getPlanetList(user.n)[1]
+    home = map:getPlanetList(user)[1]
 end
 
 function test_available_functions()
@@ -33,7 +33,7 @@ function test_available_functions()
 end
 
 function test_send_vertical()
-    local target = map:getPlanetList(map:getNeutralUser().n)[1]
+    local target = map:getPlanetList(map:getNeutralUser())[1]
     local fleets = map:getFleetList()
     assert.equals(0, #fleets)
 
@@ -56,7 +56,7 @@ function test_send_vertical()
 end
 
 function test_send_horizontal()
-    local target = map:getPlanetList(map:getNeutralUser().n)[1]
+    local target = map:getPlanetList(map:getNeutralUser())[1]
     target.x = home.x + 100
     target.y = home.y
 
@@ -68,7 +68,7 @@ function test_send_horizontal()
 end
 
 function test_redirect()
-    local target = map:getPlanetList(map:getNeutralUser().n)[1]
+    local target = map:getPlanetList(map:getNeutralUser())[1]
     home.ships = 60
 
     MapSim.send(map, home, target, 50)
@@ -86,7 +86,7 @@ function test_redirect()
 end
 
 function test_land_capture()
-    local target = map:getPlanetList(map:getNeutralUser().n)[1]
+    local target = map:getPlanetList(map:getNeutralUser())[1]
     home.ships = 60
     target.ships = 50
 
@@ -108,7 +108,7 @@ function test_land_capture()
 end
 
 function test_simulate_fleet_flying_and_landing()
-    local target = map:getPlanetList(map:getNeutralUser().n)[1]
+    local target = map:getPlanetList(map:getNeutralUser())[1]
     home.ships = 10
     home.x = 0
     home.r = 5
@@ -140,7 +140,7 @@ function test_simulate_fleet_flying_and_landing()
 end
 
 function test_simulate_production()
-    local someNeutral = map:getPlanetList(map:getNeutralUser().n)[1]
+    local someNeutral = map:getPlanetList(map:getNeutralUser())[1]
     home.ships = 10
     home.production = 50
     someNeutral.ships = 50

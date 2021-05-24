@@ -8,30 +8,30 @@ function _features_init()
     local SHIPS_COM_DIST_NORMALIZATION_FACTOR = 300
 
     function features.totalFriendlyShips(map, user)
-        return map:totalShips(user.n) / TOTAL_SHIPS_NORMALIZATION_FACTOR
+        return map:totalShips(user) / TOTAL_SHIPS_NORMALIZATION_FACTOR
     end
 
     function features.totalFriendlyProd(map, user)
-        return map:totalProd(user.n) / TOTAL_PROD_NORMALIZATION_FACTOR
+        return map:totalProd(user) / TOTAL_PROD_NORMALIZATION_FACTOR
     end
 
     function features.totalEnemyShips(map, user)
-        return map:totalEnemyShips(user.n) / TOTAL_SHIPS_NORMALIZATION_FACTOR
+        return map:totalEnemyShips(user) / TOTAL_SHIPS_NORMALIZATION_FACTOR
     end
 
     function features.totalEnemyProd(map, user)
-        return map:totalEnemyProd(user.n) / TOTAL_PROD_NORMALIZATION_FACTOR
+        return map:totalEnemyProd(user) / TOTAL_PROD_NORMALIZATION_FACTOR
     end
 
     function features.prodFraction(map, user)
-        local userProd = map:totalProd(user.n)
-        local enemyProd = map:totalEnemyProd(user.n)
+        local userProd = map:totalProd(user)
+        local enemyProd = map:totalEnemyProd(user)
         return userProd / (userProd + enemyProd)
     end
 
     function features.shipsFraction(map, user)
-        local userShips = map:totalShips(user.n)
-        local enemyShips = map:totalEnemyShips(user.n)
+        local userShips = map:totalShips(user)
+        local enemyShips = map:totalEnemyShips(user)
         return userShips / (userShips + enemyShips)
     end
 
@@ -56,8 +56,8 @@ function _features_init()
     end
 
     function features.prodCenterOfMassDistance(map, user)
-        local userCOM = centerOfMass(map:getPlanetList(user.n), "production")
-        local enemyCOM = centerOfMass(map:getEnemyPlanetList(user.n), "production")
+        local userCOM = centerOfMass(map:getPlanetList(user), "production")
+        local enemyCOM = centerOfMass(map:getEnemyPlanetList(user), "production")
         if not userCOM or not enemyCOM then
             return 0
         end
@@ -66,8 +66,8 @@ function _features_init()
 
     -- includes fleets
     function features.shipsCenterOfMassDistance(map, user, enemy)
-        local userCOM = centerOfMass(map:getPlanetAndFleetList(user.n), "ships")
-        local enemyCOM = centerOfMass(map:getEnemyPlanetAndFleetList(user.n), "ships")
+        local userCOM = centerOfMass(map:getPlanetAndFleetList(user), "ships")
+        local enemyCOM = centerOfMass(map:getEnemyPlanetAndFleetList(user), "ships")
         if not userCOM or not enemyCOM then
             return 0
         end

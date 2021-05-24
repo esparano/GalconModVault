@@ -4,7 +4,7 @@ function getPositiveRoiNeutralData(map, mapTunnels, user, neutrals)
 
     local neutralROIs = {}
     for _, p in pairs(neutrals) do
-        local distDifference = mapTunnels:getSimplifiedTunnelDist(enemyHome.n, p.n) - mapTunnels:getSimplifiedTunnelDist(home.n, p.n)
+        local distDifference = mapTunnels:getSimplifiedTunnelDist(enemyHome, p) - mapTunnels:getSimplifiedTunnelDist(home, p)
         local prodTime = game_utils.distToTravelTime(distDifference)
 
         -- planet should be closer to player than enemy
@@ -27,7 +27,7 @@ end
 
 -- NOTE: This does not consider how many ships the user has or whether the user has enough ships to capture all high-RoI neutrals simultaneously.
 function identifyHighestRoiNeutral(map, mapTunnels, user)
-    local notTunnelablePlanets = common_utils.filter(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p.n) end)
+    local notTunnelablePlanets = common_utils.filter(map:getNeutralPlanetList(), function (p) return not mapTunnels:isTunnelable(p) end)
     local positiveRoiNeutralData = getPositiveRoiNeutralData(map, mapTunnels, user, notTunnelablePlanets)
     if #positiveRoiNeutralData > 0 then 
         local bestPositiveRoiNeutral = positiveRoiNeutralData[1].target

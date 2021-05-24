@@ -1,6 +1,11 @@
 -- TODO: documentation
 function _game_utils_init()
     local game_utils = {}
+
+    function game_utils.toId(o)
+        if type(o) == "number" then return o end
+        return o.n
+    end
     
     -- Return the number of ships "planet" will have "time" seconds from now
     function game_utils.futureShips(planet, time)
