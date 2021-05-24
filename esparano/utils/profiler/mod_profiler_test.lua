@@ -24,7 +24,7 @@ end
 function test_profiling_data()
     local testModule = {}
     testModule.f = function()
-        for i = 1, 100000 do
+        for i = 1, 1000000 do
             local a = 1 + i
         end
     end
