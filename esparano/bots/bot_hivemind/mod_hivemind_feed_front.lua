@@ -19,6 +19,7 @@ function _m_init()
         end
 
         instance.name = "FeedFront"
+        instance.MAX_SHIPS_TO_SEND = 50
 
         return instance
     end
@@ -74,7 +75,7 @@ function _m_init()
     
             local frontPlanetPs = common_utils.map(frontPlanets, function(p) return p.ships end)
             
-            local targetInfo = self:getBestFeedTarget(frontPlanets, sourceInfo.p)
+            local targetInfo = self:getBestFeedTarget(frontPlanets, sourceInfo.p, plans)
             if not targetInfo then 
                 break
             end
@@ -101,8 +102,8 @@ function _m_init()
     end
 
     -- TODO: if aliases are the same, merge weights?
-    function FeedFrontMind:getBestFeedTarget(frontPlanets, source)
-        local frontWeights = self:getDesiredFrontWeights(frontPlanets)
+    function FeedFrontMind:getBestFeedTarget(frontPlanets, source, plans)
+        local frontWeights = self:getDesiredFrontWeights(frontPlanets, plans)
         
         local targetDatas = common_utils.map(frontPlanets, function(front)
             local dist = self.mapTunnels:getSimplifiedTunnelDist(source, front)
@@ -121,8 +122,9 @@ function _m_init()
     function FeedFrontMind:getBestFeedSource(nonFrontPlanets)
         local sourceDatas = {}
         for i,p in ipairs(nonFrontPlanets) do
-            local shipsReserved = self.mapFuture:getReservations()[p.n] or 0
-            local percent = getPercentToUseWithReservation(p, p.ships, shipsReserved)
+            local shipsReserved = self.mapFuture.reservations:getShipReservations(p)
+            local amountToSend = math.min(self.MAX_SHIPS_TO_SEND, p.ships)
+            local percent = getPercentToUseWithReservation(p, amountToSend, shipsReserved)
             local amountSent = getAmountSent(p, percent)
             if amountSent > 0 then 
                 table.insert(sourceDatas, {
@@ -135,12 +137,12 @@ function _m_init()
         return common_utils.find(sourceDatas, function(data) return data.amountSent end)
     end
 
-    function FeedFrontMind:getDesiredFrontWeights(frontPlanets)
+    function FeedFrontMind:getDesiredFrontWeights(frontPlanets, plans)
         local weights = {}
         local totalWeight = 0
         local minWeight = 0
         for i,front in ipairs(frontPlanets) do 
-            weights[front] = self:getDesiredFrontWeight(front)
+            weights[front] = self:getDesiredFrontWeight(front, plans)
             totalWeight = totalWeight + weights[front]
             if weights[front] < minWeight then 
                 minWeight = weights[front]
@@ -161,13 +163,14 @@ function _m_init()
     end
 
     -- TODO: add more stuff for front weight like distance to nearby enemies?
-    function FeedFrontMind:getDesiredFrontWeight(front)
+    function FeedFrontMind:getDesiredFrontWeight(front, plans)
         local weight = self.frontWeightFrontProd * front.production / 50 - self.frontWeightFrontShips * front.ships / 50
 
+        -- TODO: is this right to pass no reservations???
         -- must pass no-reservations for enemy
         -- TODO: this doesn't take into account expansion plans
-        local fullAttackData = getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.map:getEnemyUser(self.botUser), front, {})
-        weight = weight + fullAttackData.shipDiff * self.frontWeightShipDiff + fullAttackData.friendlyProdFromTarget * self.frontWeightStolenProd
+        local fullAttackData = getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.botUser, front, MapReservations.new(self.map._items), plans)
+        weight = weight - fullAttackData.shipDiff * self.frontWeightShipDiff + fullAttackData.enemyProdFromTarget * self.frontWeightStolenProd
 
         for i,enemy in ipairs(self.map:getNonNeutralPlanetAndFleetList(self.map:getEnemyUser(self.botUser))) do 
             -- avoid divide by zero errors

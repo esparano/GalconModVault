@@ -18,6 +18,8 @@ function _m_init()
         end
 
         instance.name = "Attack"
+        -- never send more than some number of ships at a time?
+        instance.MAX_SHIPS_TO_SEND = 50
 
         return instance
     end
@@ -59,9 +61,10 @@ function _m_init()
         local candidates = {}
 
         for i,front in ipairs(frontPlanets) do 
-            if not front.neutral then 
-                local shipsReserved = self.mapFuture:getReservations()[front.n] or 0
-                local percent = getPercentToUseWithReservation(front, front.ships, shipsReserved)
+            if not front.neutral then
+                local shipsReserved = self.mapFuture.reservations:getShipReservations(front)
+                local amountToSend = math.min(self.MAX_SHIPS_TO_SEND, front.ships)
+                local percent = getPercentToUseWithReservation(front, amountToSend, shipsReserved)
                 local availableShips = getAmountSent(front, percent)
                 if availableShips > 0 then
                     for j,enemyFront in ipairs(enemyFrontPlanets) do 
@@ -158,7 +161,7 @@ function _m_init()
     end
 
     function AttackMind:getFullAttackData(target, plans)
-        return getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.botUser, target, plans)
+        return getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.botUser, target, nil, plans)
     end
 
     function AttackMind:getPlanetDesc(p)

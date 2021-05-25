@@ -64,7 +64,7 @@ function _m_init()
 
         self.mapTunnels:setTunnelable(target)
         
-        self.mapFuture:updateReservations(fullAttackData.newReservations)
+        self.mapFuture.reservations:updateShipReservations(fullAttackData.newReservations)
 
         return true, fullAttackData
     end
@@ -114,17 +114,21 @@ function _m_init()
                     -- TODO: This just gets the last friendly planet before capture, even if we need to wait for more production to help capture. 
                     -- Instead, we should return whether or not the attack needs to wait for prod or whether an actual planet can send some ships now  
                     local capturingSourceShipsNeeded = data.newReservations[capturingSource.n]
-                    if capturingSourceShipsNeeded > 0 or (capturingSourceShipsNeeded == 0 and data.target.ships == 0) then 
-                        
+                    if capturingSourceShipsNeeded > 0 or (capturingSourceShipsNeeded == 0 and data.target.ships == 0) then     
+                        -- Note: don't use reserved ships because these were already taken into account during the fullAttack calculation. 
+                        -- This is likely the source of the reservation in the first place!
                         local percent = game_utils.percentToUse(capturingSource, capturingSourceShipsNeeded)
-                        local to = self.mapTunnels:getTunnelAlias(capturingSource.n, data.target.n)
+                        local to = self.mapTunnels:getTunnelAlias(capturingSource, data.target)
 
                         local sources = {capturingSource}
 
                         for i,source in ipairs(data.capturingSources) do 
+
                             if self.settings.multiSelect and source.is_planet and source ~= capturingSource then 
+                                local thisTo = self.mapTunnels:getTunnelAlias(source, data.target)
+
+                                -- only add planet to multi-select if it can afford matching sending percentage AFTER taking into account existing reserved ships
                                 local thisPercent = game_utils.percentToUse(source, data.newReservations[source.n])
-                                local thisTo = self.mapTunnels:getTunnelAlias(source.n, data.target.n)
                                 if thisPercent >= percent and thisTo.n == to.n then 
                                     table.insert(sources, source)
                                 end
@@ -232,8 +236,8 @@ function _m_init()
         local safe = neutralAttackData.ownsPlanetAtEnd or neutralAttackData.friendlyProdFromTarget > 2 * neutralAttackData.target.ships
         if not safe then return false end
 
-        local totalReservations = common_utils.copy(self.mapFuture:getReservations())
-        self.mapFuture:updateReservations(neutralAttackData.newReservations, totalReservations)    
+        local totalReservations = self.mapFuture.reservations:copy()
+        totalReservations:updateShipReservations(neutralAttackData.newReservations)    
         
         if not target.neutral then 
             a.sdf = 1 

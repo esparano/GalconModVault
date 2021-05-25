@@ -1,6 +1,7 @@
 require("mod_common_utils")
 require("mod_game_utils")
 require("mod_assert")
+require("mod_map_reservations")
 
 function _module_init()
     local MapFuture = {}
@@ -28,7 +29,7 @@ function _module_init()
         instance.botUser = botUser
         instance.items = items
         instance.planetInfo = initPlanetInfo(items)
-        instance.reservations = {}
+        instance.reservations = MapReservations.new(items)
 
         instance:_constructFutures()
 
@@ -52,20 +53,9 @@ function _module_init()
     end
 
     -- net incoming ships from all fleets, not counting ships already on the planet
-    function MapFuture:getNetIncomingShips(planet)
-        return self.planetInfo[planet.n].netIncomingShips
-    end
-
-    function MapFuture:getReservations()
-        return self.reservations
-    end
-
-    function MapFuture:updateReservations(updater, updatee)
-        updatee = updatee or self.reservations
-        for k,v in pairs(updater) do
-            updatee[k] = updatee[k] or 0
-            updatee[k] = updatee[k] + v
-        end
+    function MapFuture:getNetIncomingShips(planetId)
+        planetId = game_utils.toId(planetId)
+        return self.planetInfo[planetId].netIncomingShips
     end
 
     -- TODO: add pseudo sources as simply neutral ships with prod before capture time completely reserved!
@@ -82,12 +72,6 @@ function _module_init()
                     dist = p.data.neutralCaptureDist,
                     pseudo = true,
                 })
-            else
-                print('SUCCESSFULLY FILTERED!!!')
-                print("capture plans: " .. common_utils.dump(capturePlans))
-                local excludeTarget = map._items[excludeTargetId]
-                print("excludeTarget: " .. excludeTarget.ships)
-                -- print("pseudoSources: " .. common_utils.dump(pseudoSources))
             end
         end
 
@@ -169,10 +153,7 @@ function _module_init()
 
             local isFriendly = data.source.owner == capturingUser.n
             if data.source.is_planet then
-                -- if the planet is completely unreserved or is not fully reserved, we can use its production (TODO: this underestimates the amount of production we can gain)
-                -- if not reservations[data.source.n] or reservations[data.source.n] < data.source.ships then
-                    netProdInRadius = netProdInRadius + data.source.production * common_utils.boolToSign(isFriendly or data.pseudo)
-                -- end
+                netProdInRadius = netProdInRadius + data.source.production * common_utils.boolToSign(isFriendly or data.pseudo)
             end
 
             if owned then
@@ -188,11 +169,11 @@ function _module_init()
             -- reservations.
 
             -- add source's ships only if not already reserved
-            if reservations[data.source.n] then 
+            if reservations:getShipReservations(data.source) > 0 then 
                 assert.is_true(isFriendly, "non-friendly planet has reservations")
                 assert.is_false(data.pseudo, "pseudo sources should not have reservations!")
 
-                contribution = math.max(0, contribution - reservations[data.source.n])
+                contribution = math.max(0, contribution - reservations:getShipReservations(data.source))
             end
             -- planned-capture neutrals only contribute production, not ships.
             if data.pseudo then contribution = 0 end
@@ -211,6 +192,7 @@ function _module_init()
                     neutralCaptureDist = data.dist 
 
                     -- overcapture by "shipDiff" amount; contribution may be < shipDiff if high friendly prod outweighs enemy source's ships or if source is a planned-capture neutral
+                    -- TODO: I think this could lead to a scenario where more ships are reserve than exist on the planet
                     local capturingSourceShipsNeeded = contribution - shipDiff + 1
 
                     if isFriendly and capturingSourceShipsNeeded >= 0 then 
