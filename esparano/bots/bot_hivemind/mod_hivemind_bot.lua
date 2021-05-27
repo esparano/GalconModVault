@@ -295,6 +295,8 @@ function gradeAction(action, minds, plans)
     end
 end
 
+-- TODO: make sure a combined action is not created two different ways, for example A + B + C -> AB + C or AC + B or BC + A, resulting in 3 duplicates.
+-- TODO: split by mind/target/etc (split into combinable actions groups)
 function getCombinedActions(actions, minds, multiSelect)
     local allActions = common_utils.shallow_copy(actions)
     local newActions = common_utils.shallow_copy(actions) 
