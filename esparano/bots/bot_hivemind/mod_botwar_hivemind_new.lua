@@ -1,5 +1,6 @@
 require("mod_hivemind_bot")
 require("mod_elo")
+require("mod_logger")
 
 function _sandbox_init(_ENV) -- ignore -------------------------------------
     ----------------------------------------------------------------------------
@@ -130,9 +131,14 @@ end
 function register_bots()
     bots_register("Dev", "bots_1",
     {
-        debug = DEBUG
+        debug = DEBUG,
+        logLevel = Logger.DEBUG,
+        name = "HM-Dev",
     })
-    bots_register("Compare", "bots_2")
+    bots_register("Compare", "bots_2", {
+        logLevel = Logger.INFO,
+        name = "HM"
+    })
     -- bots_register("simple", "bots_simple")
 end
 

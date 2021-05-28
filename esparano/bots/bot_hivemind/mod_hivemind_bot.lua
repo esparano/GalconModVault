@@ -27,9 +27,10 @@ require("mod_hivemind_timer_trick")
 
 require("mod_hivemind_action")
 require("mod_hivemind_utils")
+require("mod_logger")
 
 function firstTurnSetup(params)
-    print("first turn setup")
+    logger:debug("first turn setup")
 end
 
 function getOptsForMind(mindName, params)
@@ -85,6 +86,8 @@ function bot_hivemind(params, sb_stats)
     local defaultOptions = {
         -- TODO: fill these out
         -- percent = 100,
+        name = "Hivemind",
+        logLevel = Logger.WARN,
         debug = {
             drawFriendlyFrontPlanets = false,
             drawEnemyFrontPlanets = false,
@@ -161,7 +164,6 @@ function bot_hivemind(params, sb_stats)
         }
     }
 
-
     local OPTS = common_utils.mergeTableInto(defaultOptions, params.options or {})
 
     local MEM = params.memory
@@ -175,10 +177,12 @@ function bot_hivemind(params, sb_stats)
         -- return
     end -- do an action once per second
 
+    logger = Logger.new(OPTS.name, OPTS.logLevel)
+
     local map = Map.new(ITEMS)
     local users = map:getUserList(false)
     if #users ~= 2 then 
-        print("ERROR: Match is either FFA or there is no enemy. Skipping turn. #users = " .. #users)
+        logger:fatal("Match is either FFA or there is no enemy. Skipping turn. #users = " .. #users)
         return
     end
     local enemyUser = map:getEnemyUser(botUser)
@@ -193,7 +197,7 @@ function bot_hivemind(params, sb_stats)
 
     if not MEM.initialized then
         MEM.initialized = true
-        -- firstTurnSetup(params)
+        firstTurnSetup(params)
     end
 
     -- set on each Mind
@@ -205,8 +209,8 @@ function bot_hivemind(params, sb_stats)
     }
 
     local move = getMove(OPTS, MEM)
-    print("CHOOSE: " .. move:getSummary())
-    print("------------------------------------------------")
+    logger:info("CHOOSE: " .. move:getSummary())
+    logger:info("----------------------------------------")
 
     -- DEBUG DRAWING
     -- if OPTS.debug.drawFriendlyFrontPlanets then 
