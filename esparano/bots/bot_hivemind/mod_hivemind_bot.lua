@@ -54,10 +54,10 @@ end
 
 function initMinds(params) 
     local minds = {}
-    -- Reserves ships for defense. Should analyze earlier than most other minds.
-    table.insert(minds, DefendMind.new(getOptsForMind("defend", params)))
     -- Reserves ships from planned neutral captures. Should analyze earlier than most other minds.
     table.insert(minds, ExpandMind.new(getOptsForMind("expand", params)))
+    -- Reserves ships for defense. Should analyze earlier than most other minds.
+    table.insert(minds, DefendMind.new(getOptsForMind("defend", params)))
     table.insert(minds, AttackMind.new(getOptsForMind("attack", params)))
     -- table.insert(minds, CenterControlMind.new(getOptsForMind("centercontrol", params)))
     -- table.insert(minds, CleanupMind.new(getOptsForMind("cleanup", params)))
@@ -113,7 +113,7 @@ function bot_hivemind(params, sb_stats)
             expand_overallBias = 1,
             feedFront_frontWeightFrontProd = 1,
             feedFront_frontWeightFrontShips = 1,
-            feedFront_frontWeightShipDiff = 1,
+            feedFront_frontWeightNetShips = 1,
             feedFront_frontWeightStolenProd = 1,
             feedFront_frontWeightEnemyDistIntercept = 1,
             feedFront_frontWeightEnemyOverall = 1,
@@ -138,7 +138,7 @@ function bot_hivemind(params, sb_stats)
             attack_nearbyUserShipsShipsExponent = 1,
             attack_nearbyUserShipsDistExponent = 1,
             attack_nearbyUserShipsDistIntercept = 1,
-            attack_naiveShipDiffWeight = 1,
+            attack_naiveNetShipsWeight = 1,
             attack_naiveProdDiffWeight = 1,
             attack_nearbyProdDiffWeight = 1,
             attack_targetProdWeight = 1,
@@ -150,8 +150,8 @@ function bot_hivemind(params, sb_stats)
             attack_targetClusterWeight = 1,
             attack_emptyClusterIntercept = 1,
             attack_emptyClusterBonus = 1,
-            attack_frontShipDiffWeight = 1,
-            attack_targetShipDiffWeight = 1,
+            attack_frontNetShipsWeight = 1,
+            attack_targetNetShipsWeight = 1,
             attack_distIntercept = 1,
             attack_distWeight = 1,
             attack_distExponent = 1,
@@ -276,7 +276,7 @@ function getMove(params, mem)
     -- candidates = getCombinedActions(candidates, minds, params.settings.multiSelect)
 
     -- 1 Priority is roughly equivalent to 1 ship value (high priority moves expect to gain or save many ships)
-    table.sort(candidates, function (a, b) 
+    table.sort(candidates, function (a, b)
         return a:getOverallPriority() > b:getOverallPriority() end
     )
 

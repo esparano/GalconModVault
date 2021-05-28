@@ -89,8 +89,8 @@ function _m_init()
         -- attack along ship differentials
         local incomingShips = getNetIncomingAndPresentShips(self.mapFuture, front)
         local incomingTargetShips = getNetIncomingAndPresentShips(self.mapFuture, target)
-        local naiveShipDiff = incomingShips - incomingTargetShips
-        priority = priority + self.naiveShipDiffWeight * naiveShipDiff / 10
+        local naiveNetShips = incomingShips - incomingTargetShips
+        priority = priority + self.naiveNetShipsWeight * naiveNetShips / 10
 
         -- attack towards production
         local naiveProdDiff = self.targetProdWeight * target.production
@@ -99,7 +99,7 @@ function _m_init()
         -- if enemy can capture planet:
         if frontFullAttack.enemyProdFromTarget > 0 then
             -- if planet will be recaptured captured back in the future, wait for support
-            -- if frontFullAttack.shipDiff > 0 then 
+            -- if frontFullAttack.netShips > 0 then 
                 priority = priority - 2 * frontFullAttack.enemyProdFromTarget * self.delayCaptureWeight 
             -- end
             -- TODO: desperado?
@@ -111,7 +111,7 @@ function _m_init()
         priority = priority + self.targetClusterWeight * targetClusterWorth / (self.emptyClusterIntercept * 5 + self.emptyClusterBonus * targetNearbyShips)
 
         -- attack according to excess ships and strength/weakness
-        priority = priority + self.frontShipDiffWeight * frontFullAttack.shipDiff +  self.targetShipDiffWeight * targetFullAttack.shipDiff
+        priority = priority + self.frontNetShipsWeight * frontFullAttack.netShips +  self.targetNetShipsWeight * targetFullAttack.netShips
 
         -- positive priority is a function of distance...
         local dist = self.mapTunnels:getSimplifiedTunnelDist(front, target)

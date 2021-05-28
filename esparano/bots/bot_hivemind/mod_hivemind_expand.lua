@@ -226,7 +226,7 @@ function _m_init()
 
     -- TODO: if fleet is headed towards planned capture, past another planned capture and it can tunnel through second planned capture, redirect? Make sure ships headed to neutral
     -- are counted properly in planning of capture of first neutral.
-    -- TODO: discount certain planets completely using some quick-and-dirty method for optimization purposes?
+    -- TODO: discount certain planets completely from expansion consideration using some quick-and-dirty method for optimization purposes?
 
     -- if planet is owned at end, OR if planet is lost but recovers twice its cost by the time the enemy arrives 
     -- (2x cost because of friendly investment plus the enemy doesn't need to invest anymore)
@@ -239,9 +239,6 @@ function _m_init()
         local totalReservations = self.mapFuture.reservations:copy()
         totalReservations:updateShipReservations(neutralAttackData.newReservations)    
         
-        if not target.neutral then 
-            a.sdf = 1 
-        end
         assert.is_true(target.neutral, "target was not neutral!!")
         local updatedMapTunnels = common_utils.copy(self.mapTunnels)
         assert.is_false(updatedMapTunnels:isTunnelable(neutralAttackData.target), "planet should not be tunnelable at this point!")

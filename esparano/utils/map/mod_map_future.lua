@@ -62,9 +62,9 @@ function _module_init()
     -- simulate until all fleets landed and last planet has arrived (and prod is felt)
     -- Returns whether the capturingUser owns the planet at end of simulation and the difference in ships at end
     -- Also returns the planets/fleets in distance order from the target from the first time a planet either changes hands or finds enemy resistance.
-    --  negative shipDiff indicates planet was overcome
-    --  positive shipDiff but owned = false indicates enemy presence was too strong to capture
-    --  positive shipDiff and owned = true indicates that the defense succeeded by "shipDiff" ships
+    --  negative netShips indicates planet was overcome
+    --  positive netShips but owned = false indicates enemy presence was too strong to capture
+    --  positive netShips and owned = true indicates that the defense succeeded by "netShips" ships
     function MapFuture:simulateFullAttack(map, mapTunnels, capturingUser, targetId, reservations, capturePlans)
         -- TODO: redo using future prod reservations??
         reservations = reservations or self.reservations
@@ -72,7 +72,7 @@ function _module_init()
         local fullAttackSim = FullAttackSimulation.new(map, mapTunnels, capturingUser, targetId, reservations, capturePlans)
         local results = fullAttackSim:getResults()
         return results.owned, 
-            results.shipDiff, 
+            results.netShips, 
             results.friendlyProdFromTarget, 
             results.enemyProdFromTarget, 
             results.neutralCapturingSources, 

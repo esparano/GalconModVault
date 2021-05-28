@@ -222,8 +222,8 @@ function rushWillBreakThroughAnyFrontPlanet(map, mapTunnels, defendingUser, defe
 end
 
 function rushWillDefinitelyOverwhelmPlanet(map, mapTunnels, defendingTarget, defendingPlanets, attackingPlanets)
-    local shipDiff = map:totalShips(defendingTarget.owner) - map:totalEnemyShips(defendingTarget.owner)
-    return shipDiff < 0
+    local netShips = map:totalShips(defendingTarget.owner) - map:totalEnemyShips(defendingTarget.owner)
+    return netShips < 0
 end
 
 function getClosestTarget(mapTunnels, source, targets)

@@ -25,7 +25,7 @@ function _module_init()
         instance.isNeutral = instance.attackTarget.neutral
         instance.lastDist = 0
         instance.netProdInRadius = 0
-        instance.shipDiff = 0
+        instance.netShips = 0
         instance.neutralCapturingSources = {}
         -- only set if the attackTarget is a neutral and was captured
         instance.neutralCaptureDist = nil
@@ -42,9 +42,9 @@ function _module_init()
     -- simulate until all fleets landed and last planet has arrived (and prod is felt)
     -- Returns whether the capturingUser owns the planet at end of simulation and the difference in ships at end
     -- Also returns the planets/fleets in distance order from the target from the first time a planet either changes hands or finds enemy resistance.
-    --  negative shipDiff indicates planet was overcome
-    --  positive shipDiff but owned = false indicates enemy presence was too strong to capture
-    --  positive shipDiff and owned = true indicates that the defense succeeded by "shipDiff" ships
+    --  negative netShips indicates planet was overcome
+    --  positive netShips but owned = false indicates enemy presence was too strong to capture
+    --  positive netShips and owned = true indicates that the defense succeeded by "netShips" ships
     function FullAttackSimulation:getResults()
         self.results = self.results or self:_simulateFullAttack()
         return self.results
@@ -107,9 +107,9 @@ function _module_init()
         if self.isNeutral then
             -- NOTE: this may happen even if the current source is ENEMY because + friendly prod - enemy source ships may still be > target.ships.
             local amountNeededToCapture = self:_getNeutralCaptureThreshold()
-            if self.shipDiff > amountNeededToCapture then 
-                local overcapture = self.shipDiff - amountNeededToCapture
-                self.shipDiff = self.shipDiff - self.attackTarget.ships
+            if self.netShips > amountNeededToCapture then 
+                local overcapture = self.netShips - amountNeededToCapture
+                self.netShips = self.netShips - self.attackTarget.ships
                 self.netProdInRadius = self.netProdInRadius + self.attackTarget.production
                 self.owned = true
                 self.isNeutral = false
@@ -136,10 +136,10 @@ function _module_init()
                 end
             end
         -- has planet changed hands? 
-        elseif self.shipDiff < 0 and self.owned then 
+        elseif self.netShips < 0 and self.owned then 
             self.owned = false
             self.netProdInRadius = self.netProdInRadius - 2 * self.attackTarget.production
-        elseif self.shipDiff > 0 and not self.owned then 
+        elseif self.netShips > 0 and not self.owned then 
             self.owned = true
             self.netProdInRadius = self.netProdInRadius + 2 * self.attackTarget.production
         end
@@ -147,7 +147,7 @@ function _module_init()
 
     -- NOTE: assumes that planet does not change hands in this time.
     function FullAttackSimulation:_advanceProductionWithNoCapture(data, timeDiff)
-        self.shipDiff = self.shipDiff + game_utils.prodToShipsPerSec(self.netProdInRadius) * timeDiff
+        self.netShips = self.netShips + game_utils.prodToShipsPerSec(self.netProdInRadius) * timeDiff
 
         if self.owned then
             self.friendlyProdFromTarget = self.friendlyProdFromTarget + game_utils.prodToShipsPerSec(self.attackTarget.production) * timeDiff
@@ -159,17 +159,17 @@ function _module_init()
     function FullAttackSimulation:_advanceProduction(data, timeDiff)
         if timeDiff == 0 then return end
         local prodAssumingNoCapture = game_utils.prodToShipsPerSec(self.netProdInRadius) * timeDiff
-        local newShipDiff = self.shipDiff + prodAssumingNoCapture
+        local newNetShips = self.netShips + prodAssumingNoCapture
 
-        local shipDiffCaptureThreshold = 0
-        if self.isNeutral then shipDiffCaptureThreshold = self:_getNeutralCaptureThreshold() end
+        local netShipsCaptureThreshold = 0
+        if self.isNeutral then netShipsCaptureThreshold = self:_getNeutralCaptureThreshold() end
 
         -- predict whether a capture will occur due to this production
-        if self.shipDiff < shipDiffCaptureThreshold and newShipDiff > shipDiffCaptureThreshold or 
-            self.shipDiff > shipDiffCaptureThreshold and newShipDiff < shipDiffCaptureThreshold then 
-            assert.is_false(self.isNeutral and newShipDiff < shipDiffCaptureThreshold, "Cannot uncapture neutral!!")
+        if self.netShips < netShipsCaptureThreshold and newNetShips > netShipsCaptureThreshold or 
+            self.netShips > netShipsCaptureThreshold and newNetShips < netShipsCaptureThreshold then 
+            assert.is_false(self.isNeutral and newNetShips < netShipsCaptureThreshold, "Cannot uncapture neutral!!")
 
-            local timeOfCapture = timeDiff * (shipDiffCaptureThreshold - self.shipDiff) / prodAssumingNoCapture
+            local timeOfCapture = timeDiff * (netShipsCaptureThreshold - self.netShips) / prodAssumingNoCapture
             assert.is_true(timeOfCapture >= 0, "timeOfCapture must be non-negative!")
             timeOfCapture = timeOfCapture + 0.00001 -- slightly more to make sure capture works
 
@@ -221,7 +221,7 @@ function _module_init()
         -- planned-capture neutrals only contribute production, not ships.
         if data.pseudo then contribution = 0 end
 
-        self.shipDiff = self.shipDiff + contribution * common_utils.boolToSign(isFriendly)
+        self.netShips = self.netShips + contribution * common_utils.boolToSign(isFriendly)
         self:_detectCapture(data, data.dist, contribution)
     end
 
@@ -239,7 +239,7 @@ function _module_init()
 
         return {
             owned = self.owned, 
-            shipDiff = self.shipDiff, 
+            netShips = self.netShips, 
             friendlyProdFromTarget = self.friendlyProdFromTarget, 
             enemyProdFromTarget = self.enemyProdFromTarget, 
             neutralCapturingSources = self.neutralCapturingSources, 
