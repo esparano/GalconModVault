@@ -25,20 +25,24 @@ function _module_init()
         return instance
     end
 
-    local function splitByChunk(text, chunkSize)
+    local function splitByChunk(text, chunkSize, indent)
         local s = {}
-        for i=1, #text, chunkSize do
-            s[#s+1] = string.sub(text, i, i + chunkSize - 1)
+        local i = 1
+        while i <= #text do
+            local newI = i + chunkSize - ((i == 1) and 0 or #indent)
+            s[#s+1] = string.sub(text, i, newI - 1)
+            i = newI
         end
         return s
     end
 
     function Logger:_doLog(level, levelName, msg)
+        local indentText = "    " 
         if self.level >= level then 
             local prefix = levelName .. "[" .. self.name .. "]: "
-            local messages = splitByChunk(msg, Logger.MAX_LINE_WIDTH - #prefix)
+            local messages = splitByChunk(msg, Logger.MAX_LINE_WIDTH - #prefix, indentText)
             for i,msg in ipairs(messages) do 
-                local indent = (i == 1) and "" or "    "
+                local indent = (i == 1) and "" or indentText
                 print(prefix .. indent .. msg) 
             end
         end
