@@ -66,6 +66,7 @@ function _module_init()
     --  positive shipDiff but owned = false indicates enemy presence was too strong to capture
     --  positive shipDiff and owned = true indicates that the defense succeeded by "shipDiff" ships
     function MapFuture:simulateFullAttack(map, mapTunnels, capturingUser, targetId, reservations, capturePlans)
+        -- TODO: redo using future prod reservations??
         reservations = reservations or self.reservations
 
         local fullAttackSim = FullAttackSimulation.new(map, mapTunnels, capturingUser, targetId, reservations, capturePlans)

@@ -22,6 +22,10 @@ function _game_utils_init()
         return game_utils.prodToShipsPerSec(planet.production) * time
     end
 
+    function game_utils.calcTimeToProduceShipsNonNeutral(planet, ships)
+        return ships / game_utils.prodToShipsPerSec(planet.production)
+    end
+
     -- convert distance to time (assumes constant, default ship movement speed)
     function game_utils.distToTravelTime(dist)
         return dist / 40

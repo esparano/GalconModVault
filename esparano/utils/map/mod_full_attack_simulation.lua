@@ -117,8 +117,7 @@ function _module_init()
 
                 -- only add capturing source if a data source captured, not prod.
                 if data then
-                    -- overcapture by "shipDiff" amount; contribution may be < shipDiff if high friendly prod outweighs enemy source's ships or if source is a planned-capture neutral
-                    -- TODO: I think this could lead to a scenario where more ships are reserve than exist on the planet
+                    -- only reserve what we really need from this capturing source
                     local capturingSourceShipsNeeded = contribution - overcapture
 
                     local isFriendly = data.source.owner == self.capturingUserId
@@ -158,6 +157,7 @@ function _module_init()
     end
 
     function FullAttackSimulation:_advanceProduction(data, timeDiff)
+        if timeDiff == 0 then return end
         local prodAssumingNoCapture = game_utils.prodToShipsPerSec(self.netProdInRadius) * timeDiff
         local newShipDiff = self.shipDiff + prodAssumingNoCapture
 
