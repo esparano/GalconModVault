@@ -108,7 +108,7 @@ function _m_init()
     function MctsTreeNode:getUntriedActions()
         local availableActions = self._state:getAvailableActions() -- set
         local triedActions = self:getTriedActionsForCurrentAgent()
-        local untriedActions = availableActions:diff(triedActions)
+        local untriedActions = availableActions:difference(triedActions)
         return untriedActions
     end
 
