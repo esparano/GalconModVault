@@ -71,13 +71,7 @@ function _module_init()
 
         local fullAttackSim = FullAttackSimulation.new(map, mapTunnels, capturingUser, targetId, reservations, capturePlans)
         local results = fullAttackSim:getResults()
-        return results.owned, 
-            results.netShips, 
-            results.friendlyProdFromTarget, 
-            results.enemyProdFromTarget, 
-            results.neutralCapturingSources, 
-            results.newReservations, 
-            results.neutralCaptureDist
+        return results
     end
 
     return MapFuture

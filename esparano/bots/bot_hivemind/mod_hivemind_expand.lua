@@ -147,7 +147,7 @@ function _m_init()
                             local plan
                             -- if plan already exists, no need to add a second plan to capture the same neutral.
                             if not isPreplanned then
-                                plan = self:constructPlan(data)
+                                plan = self:constructPlan(data.target.n, data.neutralCaptureDist)
                             end
                             local desc = isPreplanned and "Planned@" or "New@"
                             local neutralDesc = self:getPlanetDesc(data.target)
@@ -176,7 +176,7 @@ function _m_init()
     -- introduce various nonlinearities 
     function ExpandMind:getFullAttackSafeCapturePriority(data)
 
-        local captureEase = common_utils.clamp(self.fullAttackDiffWeight * data.shipDiff + 10 - 10 * self.fullAttackDiffIntercept, 
+        local captureEase = common_utils.clamp(self.fullAttackDiffWeight * data.netShips + 10 - 10 * self.fullAttackDiffIntercept, 
         self.fullAttackDiffMin * -10, self.fullAttackDiffMax * 10)
         local gainBonus = (data.friendlyProdFromTarget * self.gainedShipsWeight - 2 * data.target.ships * self.targetCostWeight)
         -- if planet is owned at the end, add production, otherwise, only add ships gained
@@ -197,10 +197,10 @@ function _m_init()
         return priority
     end
 
-    function ExpandMind:constructPlan(fullAttackData)
+    function ExpandMind:constructPlan(targetN, neutralCaptureDist)
         local data = {
-            targetN = fullAttackData.target.n,
-            neutralCaptureDist = fullAttackData.neutralCaptureDist,
+            targetN = targetN,
+            neutralCaptureDist = neutralCaptureDist,
         }
         return Plan.new(self.name, data)
     end
@@ -249,7 +249,8 @@ function _m_init()
         local frontPlanets = updatedMapTunnels:getFrontPlanets(self.botUser, friendlyPlannedCapturesSet)
 
         local plansIncludingNeutral = common_utils.copy(plans)
-        table.insert(plansIncludingNeutral, self:constructPlan(neutralAttackData))
+        -- TODO: change to noEnemy version
+        table.insert(plansIncludingNeutral, self:constructPlan(neutralAttackData.target.n, neutralAttackData.neutralCaptureDist))
 
         -- if we reserve ships to attack the neutral planet, will we lose a front planet in a full attack?
         for i,p in ipairs(frontPlanets) do
@@ -275,7 +276,7 @@ function _m_init()
     end
 
     function ExpandMind:getFullAttackData(target, mapTunnels, reservations, capturePlans)
-        return getFullAttackData(self.map, mapTunnels, self.mapFuture, self.botUser, target, reservations, capturePlans)
+        return self.mapFuture:simulateFullAttack(self.map, mapTunnels, self.botUser, target, reservations, capturePlans)
     end
 
     function ExpandMind:getNetIncomingAndPresentShips(p)

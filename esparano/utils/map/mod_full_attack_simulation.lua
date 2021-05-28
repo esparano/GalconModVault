@@ -33,6 +33,7 @@ function _module_init()
         instance.friendlyProdFromTarget = 0
         instance.enemyProdFromTarget = 0
         instance.newReservations = {}
+        instance.totalFriendlyShips = 0
 
         instance.MAX_TIMESTEP = 1
 
@@ -238,11 +239,12 @@ function _module_init()
         end
 
         return {
-            owned = self.owned, 
-            netShips = self.netShips, 
+            target = self.attackTarget,
+            ownsPlanetAtEnd = self.owned, 
+            netShips = self:_getNetShips(), 
             friendlyProdFromTarget = self.friendlyProdFromTarget, 
             enemyProdFromTarget = self.enemyProdFromTarget, 
-            neutralCapturingSources = self.neutralCapturingSources, 
+            capturingSources = self.neutralCapturingSources, 
             newReservations = self.newReservations,
             neutralCaptureDist = self.neutralCaptureDist,
         }

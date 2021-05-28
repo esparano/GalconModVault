@@ -161,7 +161,7 @@ function _m_init()
     end
 
     function AttackMind:getFullAttackData(target, plans)
-        return getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.botUser, target, nil, plans)
+        return self.mapFuture:simulateFullAttack(self.map, self.mapTunnels, self.botUser, target, nil, plans)
     end
 
     function AttackMind:getPlanetDesc(p)

@@ -4,21 +4,6 @@ require("mod_game_utils")
 require("mod_common_utils")
 require("mod_set")
  
-function getFullAttackData(map, mapTunnels, mapFuture, botUser, target, reservations, capturePlans)
-    local ownsPlanetAtEnd, shipDiff, friendlyProdFromTarget, enemyProdFromTarget, capturingSources, newReservations, neutralCaptureDist = 
-        mapFuture:simulateFullAttack(map, mapTunnels, botUser, target, reservations, capturePlans)
-    return {
-        target = target,
-        ownsPlanetAtEnd = ownsPlanetAtEnd,
-        shipDiff = shipDiff,
-        friendlyProdFromTarget = friendlyProdFromTarget,
-        enemyProdFromTarget = enemyProdFromTarget,
-        capturingSources = capturingSources,
-        newReservations = newReservations,
-        neutralCaptureDist = neutralCaptureDist,
-    }
-end
-
 -- make sure not to send more than 'shipsReserved' can afford
 function getPercentToUseWithReservation(source, ships, shipsReserved)
     local percentReserved = 0

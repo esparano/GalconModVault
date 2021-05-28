@@ -169,7 +169,7 @@ function _m_init()
         -- TODO: is this right to pass no reservations???
         -- must pass no-reservations for enemy
         -- TODO: this doesn't take into account expansion plans
-        local fullAttackData = getFullAttackData(self.map, self.mapTunnels, self.mapFuture, self.botUser, front, MapReservations.new(self.map._items), plans)
+        local fullAttackData = self.mapFuture:simulateFullAttack(self.map, self.mapTunnels, self.botUser, front, MapReservations.new(self.map._items), plans)
         weight = weight - fullAttackData.netShips * self.frontWeightNetShips + fullAttackData.enemyProdFromTarget * self.frontWeightStolenProd
 
         for i,enemy in ipairs(self.map:getNonNeutralPlanetAndFleetList(self.map:getEnemyUser(self.botUser))) do 
