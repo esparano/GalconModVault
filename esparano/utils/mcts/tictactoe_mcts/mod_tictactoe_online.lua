@@ -1,5 +1,6 @@
 require("mod_tictactoestate")
 require("mod_mcts")
+require("mod_common_utils")
 
 LICENSE = [[]]
 strict(true)
@@ -186,17 +187,6 @@ function lobby_init()
     end
 end
 --------------------------------------------------------------------------------
-local function deepCopy(o)
-    if type(o) ~= "table" then
-        return o
-    end
-    local r = {}
-    for k, v in pairs(o) do
-        r[k] = deepCopy(v)
-    end
-    return r
-end
-
 function update_stats()
     GAME.total = GAME.total + 1
     local stats = {}
@@ -281,7 +271,7 @@ function galcon_classic_init()
     G.enemy_planet = g2.new_planet(enemy, sw, sh / 2, 100, 0)
 
     local initialState = TicTacToeState.new()
-    local mcts = Mcts.new(deepCopy)
+    local mcts = Mcts.new(common_utils.copy)
     G.state = initialState
     G.mcts = mcts
 

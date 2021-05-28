@@ -2,28 +2,18 @@ require("mod_assert")
 require("mod_mcts_tree_node")
 require("mod_staticstate")
 require("mod_set")
+require("mod_common_utils")
 
 local allPossibleActions
 local availableactions
 local rootNode
 local state
 
-local function deepCopy(o)
-    if type(o) ~= "table" then
-        return o
-    end
-    local r = {}
-    for k, v in pairs(o) do
-        r[k] = deepCopy(v)
-    end
-    return r
-end
-
 function before_each()
     allPossibleActions = Set.new({"0", "1", "2"})
     availableActions = Set.new({"0", "1"})
     state = StaticState.new(availableActions)
-    rootNode = MctsTreeNode.new(state, deepCopy)
+    rootNode = MctsTreeNode.new(state, common_utils.copy)
 end
 
 function test_available_functions()

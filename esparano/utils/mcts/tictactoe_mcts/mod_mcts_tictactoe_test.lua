@@ -2,24 +2,14 @@ require("mod_assert")
 require("mod_mcts")
 require("mod_tictactoestate")
 require("mod_profiler")
+require("mod_common_utils")
 
 local NUM_GAMES = 1
 local NUM_ITERATIONS = 300
 local EXPLORATION_PARAMETER = 0.4
 
-local function deepCopy(o)
-    if type(o) ~= "table" then
-        return o
-    end
-    local r = {}
-    for k, v in pairs(o) do
-        r[k] = deepCopy(v)
-    end
-    return r
-end
-
 function test_uctSearch()
-    local mcts = Mcts.new(deepCopy)
+    local mcts = Mcts.new(common_utils.copy)
     for i = 1, NUM_GAMES do
         local initialState = TicTacToeState.new()
         playOneTicTacToeGame(mcts, initialState)
@@ -32,7 +22,7 @@ function play_game()
     local ok, msg =
         g2_sandbox(
         function()
-            playOneTicTacToeGame(Mcts.new(deepCopy), TicTacToeState.new())
+            playOneTicTacToeGame(Mcts.new(common_utils.copy), TicTacToeState.new())
             instructions, mem = g2_sandbox_stats()
         end,
         1000000,
