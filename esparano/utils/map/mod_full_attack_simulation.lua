@@ -173,7 +173,7 @@ function _module_init()
 
         if self.owned then
             self.friendlyProdFromTarget = self.friendlyProdFromTarget + game_utils.prodToShipsPerSec(self.attackTarget.production) * timeDiff
-        elseif not neutral then 
+        elseif not self.isNeutral then 
             self.enemyProdFromTarget = self.enemyProdFromTarget + game_utils.prodToShipsPerSec(self.attackTarget.production) * timeDiff
         end
     end
