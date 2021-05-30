@@ -37,6 +37,7 @@ function _module_init()
     end
 
     function Logger:_doLog(level, levelName, msg)
+        msg = tostring(msg)
         local indentText = "    " 
         if self.level >= level then 
             local prefix = levelName .. "[" .. self.name .. "]: "
