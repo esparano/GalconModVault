@@ -72,15 +72,16 @@ function _m_init()
     function ExpandMind:suggestActions(plans)
         local candidates = {}
 
+        logger:trace("plans: " .. common_utils.dump(plans))
         -- run this just to better calculate tunnels
         -- TODO: this can lead to situations where the bot sends at a planet and can't actually capture it...
-        -- TODO: this also leads to situatiosn where the bot miscounts front planets because a back planet may tunnel through a low-value neutral unplanned for capture (or enemy) instead of a 
+        -- TODO: this also leads to situations where the bot miscounts front planets because a back planet may tunnel through a low-value neutral unplanned for capture (or enemy) instead of a 
         -- planned front planet.
         -- getNeutralsDataWithPositiveRoi(self.map, self.mapTunnels, self.botUser)
 
         candidates = common_utils.combineLists(candidates, self:suggestFullAttackSafeActions(plans))
         -- TODO: send towards "good" areas, summing prod for each branch/front planet etc.
-        -- TODO: shuttle ships towards planets that will be expanded so that we can expand faster if we want? Shuttle ships towards planets that are close to + shipdiff and good returns/prod?
+        -- TODO: shuttle ships towards planets that will be expanded so that we can expand faster if we want? Shuttle ships towards planets that are close to + netShips and good returns/prod?
 
         return candidates
     end
@@ -175,7 +176,6 @@ function _m_init()
 
     -- introduce various nonlinearities 
     function ExpandMind:getFullAttackSafeCapturePriority(data)
-
         local captureEase = common_utils.clamp(self.fullAttackDiffWeight * data.netShips + 10 - 10 * self.fullAttackDiffIntercept, 
         self.fullAttackDiffMin * -10, self.fullAttackDiffMax * 10)
         local gainBonus = (data.friendlyProdFromTarget * self.gainedShipsWeight - 2 * data.target.ships * self.targetCostWeight)
@@ -193,7 +193,7 @@ function _m_init()
         local planContinuityBonus = isPreplanned and 15 * self.planContinuityBonus or 0
 
         local priority = self.fullAttackCaptureEase * captureEase / 10 + planContinuityBonus + gainBonus
-        priority = self.overallWeight + self.overallBias - 1
+        priority = priority * self.overallWeight + self.overallBias - 1
         return priority
     end
 
@@ -210,7 +210,7 @@ function _m_init()
             -- don't attack neutrals that are already planned to be captured
             not common_utils.findFirst(self.plannedCapturesData, function (data) return data.target.n == target.n end)
             -- only send if the neutral won't already be captured by incoming fleets
-            and self:getNetIncomingAndPresentShips(target) >= 0
+            and self:getNetIncomingAndPresentShips(target) >= 0 -- TODO: this could lead to bugs where enemy is floating past neutral being expanded to.
         end)
         local safeNeutralData = {}
         for _,target in ipairs(candidates) do
