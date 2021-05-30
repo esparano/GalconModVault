@@ -53,9 +53,11 @@ function _m_init()
         if not target.neutral then return false end
 
         -- abandon plan if no longer viable
+        logger:trace("examining plan" .. target.ships)
         local viable, fullAttackData = self:isFullAttackViable(target, confirmedPlans)
+        logger:trace("finished examining plan")
         if not viable then
-            -- print("abandoning plan to capture " .. self:getPlanetDesc(target))
+            logger:trace("abandoning plan to capture " .. self:getPlanetDesc(target))
             return false 
         end
 
@@ -228,16 +230,26 @@ function _m_init()
     -- are counted properly in planning of capture of first neutral.
     -- TODO: discount certain planets completely from expansion consideration using some quick-and-dirty method for optimization purposes?
 
+    -- TODO: This does not capture the case where a front planet (or this planet) falls briefly, causing others to also fall in a chain reaction.
     -- if planet is owned at end, OR if planet is lost but recovers twice its cost by the time the enemy arrives 
     -- (2x cost because of friendly investment plus the enemy doesn't need to invest anymore)
     function ExpandMind:isFullAttackViable(target, plans)
         local neutralAttackData = self:getFullAttackData(target, self.mapTunnels, nil, plans)
+        
+        logger:trace(common_utils.dump(neutralAttackData))
 
-        local safe = neutralAttackData.ownsPlanetAtEnd or neutralAttackData.friendlyProdFromTarget > 2 * neutralAttackData.target.ships
+        -- case 1: owns planet at end, but had to pay cost of neutral, and bot and enemy produced some ships. Diff in produced ships must be > cost.
+        -- case 2: DOES NOT own planet at end, but had to pay cost of neutral, and bot and enemy produced some ships, AND enemy doesn't have to pay cost.
+        -- Diff in produced ships must be > 2 * cost.
+        -- TODO: make this trainable.
+        -- local netShipsMinusCost = (neutralAttackData.friendlyProdFromTarget - neutralAttackData.enemyProdFromTarget) - neutralAttackData.target.ships
+        -- local safe = neutralAttackData.ownsPlanetAtEnd and netShipsMinusCost > 0 or netShipsMinusCost > neutralAttackData.target.ships
+        -- TODO: This is overly cautious!! If planet is lost to enemy very briefly but regained, it can still be worth taking.
+        local safe = neutralAttackData.ownsPlanetAtEnd and neutralAttackData.enemyProdFromTarget == 0
         if not safe then return false end
 
         local totalReservations = self.mapFuture.reservations:copy()
-        totalReservations:updateShipReservations(neutralAttackData.newReservations)    
+        totalReservations:updateShipReservations(neutralAttackData.noEnemyReservations)    
         
         assert.is_true(target.neutral, "target was not neutral!!")
         local updatedMapTunnels = common_utils.copy(self.mapTunnels)
@@ -249,9 +261,9 @@ function _m_init()
         local frontPlanets = updatedMapTunnels:getFrontPlanets(self.botUser, friendlyPlannedCapturesSet)
 
         local plansIncludingNeutral = common_utils.copy(plans)
-        -- TODO: change to noEnemy version
-        table.insert(plansIncludingNeutral, self:constructPlan(neutralAttackData.target.n, neutralAttackData.neutralCaptureDist))
+        table.insert(plansIncludingNeutral, self:constructPlan(neutralAttackData.target.n, neutralAttackData.noEnemyNeutralCaptureDist))
 
+        -- NOTE: These calculations assume that the enemy does not attempt to capture the neutral we just tested during a full-attack of another front planet.
         -- if we reserve ships to attack the neutral planet, will we lose a front planet in a full attack?
         for i,p in ipairs(frontPlanets) do
             -- if the neutral IS a front planet, don't full-attack-test it a second time.
@@ -259,10 +271,16 @@ function _m_init()
                 local frontAttackData = self:getFullAttackData(p, updatedMapTunnels, totalReservations, plansIncludingNeutral)
                 -- TODO: this could be overly cautious. Sometimes you still want to expand despite not owning a planet at the end, \
                 -- for example, if the prod gained by the neutral is greater than the sum of lost prod from lost front planets.
-                if not frontAttackData.ownsPlanetAtEnd then
+
+                -- planet was assumed to be owned during previous calculation, so subtract double the enemy's stolen prod (enemy gained + bot lost)
+                -- netShipsMinusCost = netShipsMinusCost - 2 * frontAttackData.enemyProdFromTarget
+                -- local safe = frontAttackData.owns PlanetAtEnd and netShipsMinusCost > 0 or netShipsMinusCost > neutralAttackData.target.ships
+                 -- TODO: THIS IS OVERLY CAUTIOUS AND WON'T WORK AGAINST FLOATING OR CAPTURING ENEMY PLANETS
+                local safe = frontAttackData.ownsPlanetAtEnd and frontAttackData.enemyProdFromTarget == 0
+                if not safe then
                     local neutralDesc = self:getPlanetDesc(neutralAttackData.target)
                     local frontDesc = self:getPlanetDesc(frontAttackData.target)
-                    -- print(frontDesc .. " is vulnerable by " .. frontAttackData.shipDiff .. " if expanding to " .. neutralDesc)
+                    logger:trace(frontDesc .. " is vulnerable by " .. frontAttackData.netShips .. " if expanding to " .. neutralDesc)
                     return false
                 end
             end

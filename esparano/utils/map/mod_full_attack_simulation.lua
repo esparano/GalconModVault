@@ -40,6 +40,11 @@ function _module_init()
         instance.enemyProdFromTarget = 0
         
         instance.newReservations = {}
+        -- if the enemy didn't exist, what ship reservations would we need?
+        instance.noEnemyReservations = {}
+        instance.isNeutralIfNoEnemy = instance.attackTarget.neutral
+        -- only set if the attackTarget is a neutral and was captured assuming no enemy intervention
+        instance.noEnemyNeutralCaptureDist = nil
 
         instance.MAX_TIMESTEP = 1
 
@@ -120,6 +125,30 @@ function _module_init()
         local netShips = self:_getNetShips()
 
         local amountNeededToCapture = self:_getNeutralCaptureThreshold()
+
+        -- if there is no enemy, could we capture the neutral?
+        if self.isNeutralIfNoEnemy then
+            if self.friendlyShips > amountNeededToCapture then 
+                local overcapture = self.friendlyShips - amountNeededToCapture
+                self.isNeutralIfNoEnemy = false
+                self.noEnemyNeutralCaptureDist = dist
+
+                if data then 
+                    local capturingSourceShipsNeeded = contribution - overcapture
+                    --
+                    local isFriendly = data.source.owner == self.capturingUserId
+                    if isFriendly and capturingSourceShipsNeeded >= 0 then -- TODO: > 0?
+                        self.noEnemyReservations[data.source.n] = capturingSourceShipsNeeded
+                    end
+                end
+            elseif data then 
+                -- reserve the entire source towards this plan
+                local isFriendly = data.source.owner == self.capturingUserId
+                if isFriendly then
+                    self.noEnemyReservations[data.source.n] = contribution
+                end
+            end
+        end
         -- if target is neutral, can we capture it yet?
         -- note: The enemy doesn't ever capture neutrals. It hovers nearby and lands the moment we land.
         if self.isNeutral then            
@@ -138,8 +167,7 @@ function _module_init()
                     local capturingSourceShipsNeeded = contribution - overcapture
 
                     local isFriendly = data.source.owner == self.capturingUserId
-                    if isFriendly and capturingSourceShipsNeeded >= 0 then 
-                        capturingSourceShipsNeeded = math.max(0, capturingSourceShipsNeeded)
+                    if isFriendly and capturingSourceShipsNeeded >= 0 then -- TODO: > 0?
                         self.newReservations[data.source.n] = capturingSourceShipsNeeded
                         table.insert(self.neutralCapturingSources, data.source)
                     end
@@ -162,8 +190,8 @@ function _module_init()
             self.friendlyProdInRadius = self.friendlyProdInRadius + self.attackTarget.production
             self.enemyProdInRadius = self.enemyProdInRadius - self.attackTarget.production
         end
-        assert.is_true(self.friendlyProdInRadius >= 0, "friendlyProdInRadius must be non-negative")
-        assert.is_true(self.enemyProdInRadius >= 0, "enemyProdInRadius must be non-negative")
+        assert.is_true(self.friendlyProdInRadius >= 0, "friendlyProdInRadius must be non-negative but was " .. self.friendlyProdInRadius)
+        assert.is_true(self.enemyProdInRadius >= 0, "enemyProdInRadius must be non-negative but was " .. self.enemyProdInRadius)
     end
 
     -- NOTE: assumes that planet does not change hands in this time.
@@ -214,13 +242,18 @@ function _module_init()
         end
     end
 
-    function FullAttackSimulation:_nextSource(data)
+    function FullAttackSimulation:_processSource(data)
         assert.is_true(data.dist >= 0, "distance of source in full-attack was negative!")
 
         local diff = data.dist - self.lastDist
         assert.is_true(diff >= 0, "distance of source in full-attack was not sorted properly!")
         self.lastDist = data.dist
         local timeDiff = game_utils.distToTravelTime(diff)
+
+        logger:trace("incoming: " .. common_utils.dump(data))
+
+        logger:trace("net ships before prod: " .. self:_getNetShips())
+        logger:trace("net prod before prod: " .. self:_getNetProdInRadius())
 
         self:_advanceProduction(data, timeDiff)
             
@@ -234,6 +267,9 @@ function _module_init()
                 self.enemyProdInRadius = self.enemyProdInRadius + data.source.production
             end
         end
+        logger:trace("net ships after prod: " .. self:_getNetShips())
+        logger:trace("net prod after prod: " .. self:_getNetProdInRadius())
+
 
         -- land all unreserved ships from source
         local contribution = math.max(0, data.source.ships - self.reservations:getShipReservations(data.source))
@@ -255,9 +291,13 @@ function _module_init()
             self.enemyShips = self.enemyShips + contribution
         end
         self:_detectCapture(data, data.dist, contribution)
+
+        logger:trace("net ships after landing: " .. self:_getNetShips())
+        logger:trace("net prod after landing: " .. self:_getNetProdInRadius())
     end
 
     function FullAttackSimulation:_simulateFullAttack()
+        logger:trace("NEW FULL ATTACK CALCULATION on " .. self.attackTarget.ships)
         local sourceData = self:_getDistSortedShipSources()
         -- pseudo-sources for planned-capture neutrals with new dist based on estimated capture time and then travel time to target
         local capturedNeutralSourceData = self:_getPlannedCaptureSources()
@@ -266,18 +306,20 @@ function _module_init()
         table.sort(sourceData, function (d1, d2) return d1.dist < d2.dist end)
 
         for _,data in ipairs(sourceData) do
-            self:_nextSource(data)
+            self:_processSource(data)
         end
 
         return {
             target = self.attackTarget,
-            ownsPlanetAtEnd = self.owned, 
+            ownsPlanetAtEnd = self.owned,
             netShips = self:_getNetShips(), 
             friendlyProdFromTarget = self.friendlyProdFromTarget, 
             enemyProdFromTarget = self.enemyProdFromTarget, 
             capturingSources = self.neutralCapturingSources, 
             newReservations = self.newReservations,
+            noEnemyReservations = self.noEnemyReservations,
             neutralCaptureDist = self.neutralCaptureDist,
+            noEnemyNeutralCaptureDist = self.noEnemyNeutralCaptureDist,
         }
     end
 
