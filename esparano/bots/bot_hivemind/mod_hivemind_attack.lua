@@ -97,10 +97,12 @@ function _m_init()
         local nearbyProdDiff = self.targetNearbyProdWeight * targetNearbyProd
 
         -- if enemy can capture planet:
+        priority = priority - frontFullAttack.enemyProdFromTarget * self.delayCaptureWeight 
+        priority = priority + frontFullAttack.friendlyProdFromTarget * self.stolenProdWeight 
         if frontFullAttack.enemyProdFromTarget > 0 then
             -- if planet will be recaptured captured back in the future, wait for support
             -- if frontFullAttack.netShips > 0 then 
-                priority = priority - 2 * frontFullAttack.enemyProdFromTarget * self.delayCaptureWeight 
+                -- priority = priority - 2 * frontFullAttack.enemyProdFromTarget * self.delayCaptureWeight 
             -- end
             -- TODO: desperado?
         end

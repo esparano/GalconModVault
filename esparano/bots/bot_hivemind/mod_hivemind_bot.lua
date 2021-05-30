@@ -144,6 +144,7 @@ function bot_hivemind(params, sb_stats)
             attack_targetProdWeight = 1,
             attack_targetNearbyProdWeight = 1,
             attack_delayCaptureWeight = 1,
+            attack_stolenProdWeight = 1,
             attack_overcaptureIncomingShipsWeight = 1,
             attack_overcapturedNearbyEnemyShipsWeight = 1,
             attack_overcapturePenalty = 1,
