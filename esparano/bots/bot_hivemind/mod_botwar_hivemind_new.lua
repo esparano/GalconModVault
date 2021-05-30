@@ -136,7 +136,7 @@ function register_bots()
         name = "HM-Dev",
     })
     bots_register("Compare", "bots_2", {
-        logLevel = Logger.INFO,
+        logLevel = Logger.WARN,
         name = "HM"
     })
     -- bots_register("simple", "bots_simple")

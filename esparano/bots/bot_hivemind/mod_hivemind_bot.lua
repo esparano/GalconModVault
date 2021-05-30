@@ -269,6 +269,10 @@ function getMove(params, mem)
         gradeAction(action, minds, mem.plans)
     end
 
+    for i,a in ipairs(candidates) do 
+        logger:debug(a:getSummary())
+    end
+
     candidates = common_utils.filter(candidates, function (a) return a:getOverallPriority() >= 0 end)
 
     -- TODO: THIS sometimes results in situations where the bot over-sends to expand to a nearby planet, not realizing that it can't actually afford multiple neutrals.
@@ -282,7 +286,7 @@ function getMove(params, mem)
     )
 
     -- for i,a in ipairs(candidates) do 
-    --     print(a:getSummary())
+    --     logger:debug(a:getSummary())
     -- end
 
     local chosenAction = candidates[1]
