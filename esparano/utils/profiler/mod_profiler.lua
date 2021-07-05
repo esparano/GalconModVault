@@ -2,19 +2,19 @@ require("mod_common_utils")
 
 --[[
     Example usage: 
-    -- local p = profiler.new()
+    -- local p = Profiler.new()
     -- p:profile(someObject)
     -- someObject:doSomeExpensiveStuff()
     -- p:printData(someObject, "objectName")
 ]]
 
 -- TODO: documentation
-function _profiler_init()
-    local profiler = {}
+function _m_init()
+    local Profiler = {}
 
-    function profiler.new()
+    function Profiler.new()
         local instance = {}
-        for k, v in pairs(profiler) do
+        for k, v in pairs(Profiler) do
             instance[k] = v
         end
         instance.data = {}
@@ -39,7 +39,7 @@ function _profiler_init()
 
     -- note: functions on obj cannot change after this point or they won't be tracked
     -- NOTE: If functions do not take at least 1ms, they don't get counted :(. Lua sucks sometimes.
-    function profiler:profile(obj)
+    function Profiler:profile(obj)
         self.data[obj] = {}
         for k, v in pairs(obj) do
             if type(v) == "function" then
@@ -50,7 +50,7 @@ function _profiler_init()
     end
 
     -- data[obj].funcName.n = num calls, data[obj].funcName.elapsed = total elapsed time for n calls
-    function profiler:getData()
+    function Profiler:getData()
         return self.data
     end
 
@@ -66,17 +66,17 @@ function _profiler_init()
         return true
     end
 
-    function profiler:getN(obj, funcName)
+    function Profiler:getN(obj, funcName)
         if not verifyHasData(self.data, obj, funcName) then return 0 end
         return self.data[obj][funcName].n
     end
 
-    function profiler:getElapsed(obj, funcName)
+    function Profiler:getElapsed(obj, funcName)
         if not verifyHasData(self.data, obj, funcName) then return 0 end
         return self.data[obj][funcName].elapsed
     end
     
-    function profiler:printData(obj, objName)
+    function Profiler:printData(obj, objName)
         if self.data[obj] == nil then
             print("obj " .. objName .. " was not found. Profiling statistics cannot be printed")
             return
@@ -95,7 +95,7 @@ function _profiler_init()
         end
     end
 
-    return profiler
+    return Profiler
 end
-profiler = _profiler_init()
-_profiler_init = nil
+Profiler = _m_init()
+_m_init = nil

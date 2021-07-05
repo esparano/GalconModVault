@@ -11,7 +11,7 @@ function test_wraps_multiarg_function()
         end
     end
 
-    local profiler = profiler.new()
+    local profiler = Profiler.new()
     profiler:profile(testModule)
 
     local expectedX = 1235
@@ -29,7 +29,7 @@ function test_profiling_data()
         end
     end
 
-    local profiler = profiler.new()
+    local profiler = Profiler.new()
     profiler:profile(testModule)
     local data = profiler:getData()
 
@@ -51,7 +51,7 @@ end
 
 function test_getN_unknown_func()
     local testModule = {}
-    local profiler = profiler.new()
+    local profiler = Profiler.new()
     profiler:profile(testModule)
 
     assert.equals(0, profiler:getN(testModule, "asdf"))
@@ -62,7 +62,7 @@ function test_getN_unknown_obj()
     local testModule = {asdf = function()
             print("inside asdf")
         end}
-    local profiler = profiler.new()
+    local profiler = Profiler.new()
     -- OOPS! forgot to track the object
     --profiler:profile(testModule)
 
