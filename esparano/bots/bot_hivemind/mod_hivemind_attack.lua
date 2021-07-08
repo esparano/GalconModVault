@@ -97,7 +97,7 @@ function _m_init()
         local nearbyProdDiff = self.targetNearbyProdWeight * targetNearbyProd
 
         -- if enemy can capture planet:
-        priority = priority - frontFullAttack.enemyProdFromTarget * self.delayCaptureWeight 
+        priority = priority - frontFullAttack.enemyProdFromTarget * self.delayCaptureWeight / 10
         priority = priority + frontFullAttack.friendlyProdFromTarget * self.stolenProdWeight 
         if frontFullAttack.enemyProdFromTarget > 0 then
             -- if planet will be recaptured captured back in the future, wait for support

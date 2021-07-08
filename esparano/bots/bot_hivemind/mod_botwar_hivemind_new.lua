@@ -189,7 +189,12 @@ function init()
         delay = 0.25,
         -- mapSeed = 26,
         -- mapSeed = 559, -- streaming slowly
-        mapSeed = 26,
+        -- mapSeed = 458,
+        -- mapSeed = 817, -- testing reservations of future prod
+        -- mapSeed = 811, -- testing defense
+        -- mapSeed = 874, -- great for testing minimax cluster expansion and floating, and performance.
+        -- mapSeed = 357, -- Fluffing ships!!
+        mapSeed = 874, -- MASSIVE overexpansion
         minNeutralProd = 15,
         maxNeutralShips = 50
     }
@@ -518,7 +523,6 @@ function _bots_sandbox(live)
         exp = math.exp,
         sb_stats = g2_sandbox_stats,
         bot_hivemind = bot_hivemind,
-        Map = Map
     }
     if live then
         sb.print = function()

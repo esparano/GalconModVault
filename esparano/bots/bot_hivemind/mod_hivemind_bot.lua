@@ -112,7 +112,6 @@ function bot_hivemind(params, sb_stats)
             expand_overallWeight = 1,
             expand_overallBias = 1,
             feedFront_frontWeightFrontProd = 1,
-            feedFront_frontWeightFrontShips = 1,
             feedFront_frontWeightNetShips = 1,
             feedFront_frontWeightStolenProd = 1,
             feedFront_frontWeightEnemyDistIntercept = 1,
@@ -126,7 +125,9 @@ function bot_hivemind(params, sb_stats)
             feedFront_targetDistDiscount = 1,
             feedFront_targetDistDiscountExponent = 1,
             feedFront_feedSendAmountWeight = 1,
+            feedFront_feedSendAmountExponent = 1,
             feedFront_feedDistWeight = 1,
+            feedFront_feedDistExponent = 1,
             feedFront_overallWeight = 1,
             feedFront_overallBias = 1,
             attack_nearbyCapturableProdProdExponent = 1,
@@ -180,6 +181,10 @@ function bot_hivemind(params, sb_stats)
 
     logger = Logger.new(OPTS.name, OPTS.logLevel)
 
+    if not MEM.initialized then
+        MEM.initialized = true
+        firstTurnSetup(params)
+    end
     local map = Map.new(ITEMS)
     local users = map:getUserList(false)
     if #users ~= 2 then 
@@ -191,15 +196,9 @@ function bot_hivemind(params, sb_stats)
     MEM.mapTunnelsData = MEM.mapTunnelsData or {}
     MEM.plans = MEM.plans or {}
     -- update mapTunnelsData, then clone it for use in this function to avoid neutrals marked tunnelable from being permanently (mistakenly) tunnelable even if the map changes a lot
-    local mapTunnels = MapTunnels.new(ITEMS, MEM.mapTunnelsData)
+    MapTunnels.new(ITEMS, MEM.mapTunnelsData)
     local mapTunnels = MapTunnels.new(ITEMS, common_utils.copy(MEM.mapTunnelsData))
-
     local mapFuture = MapFuture.new(ITEMS, botUser)
-
-    if not MEM.initialized then
-        MEM.initialized = true
-        firstTurnSetup(params)
-    end
 
     -- set on each Mind
     OPTS.passThrough = {

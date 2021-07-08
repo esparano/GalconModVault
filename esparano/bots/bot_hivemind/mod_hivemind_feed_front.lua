@@ -44,10 +44,6 @@ function _m_init()
     -- For each mini-map, attempt a max-efficiency multi-select tunnel, selecting % that sends most total (unreserved) ships to alias
     -- Grade priority based on total ships sent as well as
 
-
-
-
-
     -- for each source, suggest a (trainable) best front to feed
     function FeedFrontMind:suggestFeedFronts(plans)
         local candidates = {}
@@ -96,7 +92,7 @@ function _m_init()
     -- introduce various nonlinearities 
     -- Should this use source/target weights?
     function FeedFrontMind:getFeedPriority(sourceInfo, targetInfo)
-        local priority = self.feedSendAmountWeight * sourceInfo.amountSent / 5 + self.feedDistWeight * targetInfo.dist / 300 
+        local priority = self.feedSendAmountWeight * sourceInfo.amountSent ^ self.feedSendAmountExponent / 3 + self.feedDistWeight * targetInfo.dist ^ self.feedDistExponent / 300 
         priority = priority * self.overallWeight + self.overallBias - 1
         return priority
     end
@@ -164,7 +160,7 @@ function _m_init()
 
     -- TODO: add more stuff for front weight like distance to nearby enemies?
     function FeedFrontMind:getDesiredFrontWeight(front, plans)
-        local weight = self.frontWeightFrontProd * front.production / 50 - self.frontWeightFrontShips * front.ships / 50
+        local weight = self.frontWeightFrontProd * front.production / 50
 
         -- TODO: is this right to pass no reservations???
         -- must pass no-reservations for enemy
@@ -175,7 +171,7 @@ function _m_init()
         for i,enemy in ipairs(self.map:getNonNeutralPlanetAndFleetList(self.map:getEnemyUser(self.botUser))) do 
             -- avoid divide by zero errors
             local dist
-            if enemy.is_fleet then 
+            if enemy.is_fleet then
                 dist = self.mapTunnels:getApproxFleetTunnelDist(enemy, front)
             else
                 dist = self.mapTunnels:getSimplifiedTunnelDist(enemy, front)

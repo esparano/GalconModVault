@@ -40,7 +40,7 @@ function _module_init()
 
     -- reserve a number of ships currently on a planet. Returns number of ships actually reserved.
     function MapReservations:reserveShips(planetId, ships)
-        if ships == 0 then return 0 end
+        if common_utils.toPrecision(ships, 5) == 0 then return 0 end
 
         planetId = game_utils.toId(planetId)
         local planet = self.items[planetId]

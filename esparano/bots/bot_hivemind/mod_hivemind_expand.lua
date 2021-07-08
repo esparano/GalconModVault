@@ -286,6 +286,9 @@ function _m_init()
             end
         end
 
+        -- TODO: have enemy fullAttack all neutrals with better ship/cost than this neutral before and after reserving for this expansion.
+        -- If the enemy is now able to capture any more efficient neutral as a result of this expansion, DO NOT EXPAND. This is the crucial minimax aspect of expansion.
+
         return true, neutralAttackData
     end
 

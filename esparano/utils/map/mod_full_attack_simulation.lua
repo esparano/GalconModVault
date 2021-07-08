@@ -296,6 +296,7 @@ function _module_init()
         logger:trace("net prod after landing: " .. self:_getNetProdInRadius())
     end
 
+    -- TODO: reserve future prod during full-attacks so that future prod isn't double counted between defense and expansion.
     function FullAttackSimulation:_simulateFullAttack()
         logger:trace("NEW FULL ATTACK CALCULATION on " .. self.attackTarget.ships)
         local sourceData = self:_getDistSortedShipSources()
