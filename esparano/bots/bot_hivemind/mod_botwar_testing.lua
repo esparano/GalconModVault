@@ -15,36 +15,36 @@ function bots_waffle3z_optimized(params)
     
     OPTS = OPTS or {
         optimized = {
-            behind_in_prod_threshold_factor = 1,
-            behind_in_prod_ships_increase_factor = 1,
-            behind_in_prod_nearest_enemy_prod_exponent = 1,
-            tunneling_path_dist_discount = 0,
-            recover_time_dist_factor = 1,
-            recover_time_target_prod_factor = 1,
-            recover_time_source_prod_factor = 1,
-            benefit_factor = 1,
-            benefit_excess_factor = 1,
-            benefit_liability_factor = 1,
-            expand_target_prod_exponent = 1,
-            expand_total_prod_exponent = 1,
-            fleet_imminent_threshold_factor = 1,
-            control_threshold_medium = 1,
-            control_threshold_high = 1,
-            with_control_ships_factor = 1,
-            control_maintain_threshold_factor = 1,
-            fleet_radius_dist_factor = 1,
-            fleet_target_prod_factor = 1,
-            fleet_target_dist_factor = 1,
-            fleet_neutral_target_dist_factor = 1,
-            available_ships_target_factor_1 = 1,
-            fleet_target_factor_1 = 1,
-            fleet_target_factor_2 = 1,
-            defend_factor_1 = 1,
-            defend_factor_2 = 1,
-            danger_strength = 1,
-            help_strength = 1,
-            target_defense_strength = 1,
-            main_target_distance_factor = 1,
+            behind_in_prod_threshold_factor = 1.355,
+            behind_in_prod_ships_increase_factor = 0.977,
+            behind_in_prod_nearest_enemy_prod_exponent = 1.142,
+            tunneling_path_dist_discount = -0.425,
+            recover_time_dist_factor = 1.286,
+            recover_time_target_prod_factor = 0.6185,
+            recover_time_source_prod_factor = 0.914,
+            benefit_factor = 0.9995,
+            benefit_excess_factor = 0.908,
+            benefit_liability_factor = 0.96,
+            expand_target_prod_exponent = 0.92,
+            expand_total_prod_exponent = 1.076,
+            fleet_imminent_threshold_factor = 1.42,
+            control_threshold_medium = 0.9704,
+            control_threshold_high = 0.9948,
+            with_control_ships_factor = 0.971,
+            control_maintain_threshold_factor = 0.988,
+            fleet_radius_dist_factor = 1.019,
+            fleet_target_prod_factor = 0.922,
+            fleet_target_dist_factor = 0.958,
+            fleet_neutral_target_dist_factor = 0.626,
+            available_ships_target_factor_1 = 0.9425,
+            fleet_target_factor_1 = 1.043,
+            fleet_target_factor_2 = 0.9995,
+            defend_factor_1 = 1.004,
+            defend_factor_2 = 1.202,
+            danger_strength = 0.9545,
+            help_strength = 0.9995,
+            target_defense_strength = 0.9785,
+            main_target_distance_factor = 1.1015,
         }
     }
 
@@ -1355,7 +1355,10 @@ local waffle3z_opts_3 = convert_bot_chromosome_to_options(waffle3z_run3_defaults
 
 local waffle3z_run4_defaultstart_best_chromosome_rep = { ["fleet_neutral_target_dist_factor"] = 0.163,["help_strength"] = 0.333,["benefit_excess_factor"] = 0.272,["expand_target_prod_exponent"] = 0.42,["recover_time_source_prod_factor"] = 0.276,["danger_strength"] = 0.303,["control_maintain_threshold_factor"] = 0.488,["main_target_distance_factor"] = 0.401,["control_threshold_medium"] = 0.426,["defend_factor_1"] = 0.336,["fleet_target_prod_factor"] = 0.311,["behind_in_prod_nearest_enemy_prod_exponent"] = 0.714,["target_defense_strength"] = 0.319,["fleet_target_factor_1"] = 0.362,["fleet_target_factor_2"] = 0.333,["recover_time_target_prod_factor"] = 0.079,["defend_factor_2"] = 0.468,["behind_in_prod_ships_increase_factor"] = 0.318,["with_control_ships_factor"] = 0.471,["tunneling_path_dist_discount"] = 0.305,["fleet_radius_dist_factor"] = 0.519,["behind_in_prod_threshold_factor"] = 0.57,["benefit_factor"] = 0.333,["recover_time_dist_factor"] = 0.524,["benefit_liability_factor"] = 0.46,["fleet_target_dist_factor"] = 0.329,["control_threshold_high"] = 0.487,["available_ships_target_factor_1"] = 0.295,["expand_total_prod_exponent"] = 0.576,["fleet_imminent_threshold_factor"] = 0.585,} 
 local waffle3z_opts_4 = convert_bot_chromosome_to_options(waffle3z_run4_defaultstart_best_chromosome_rep, bots_waffle3z_options_init)
-bots_register("waffle3z_opt_4", "bots_waffle3z_optimized", waffle3z_opts_4)
+-- bots_register("waffle3z_opt_4", "bots_waffle3z_optimized", waffle3z_opts_4)
+
+bots_register("waffle3z_opt_defaults", "bots_waffle3z_optimized")
+
 ----------------------------------------------------------------------------
 -- Below this is the code for running the bot war
 -- You may want to tweak some of the GAME
