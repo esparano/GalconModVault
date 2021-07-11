@@ -28,6 +28,7 @@ require("mod_hivemind_timer_trick")
 require("mod_hivemind_action")
 require("mod_hivemind_utils")
 require("mod_logger")
+require("mod_profiler")
 
 function firstTurnSetup(params)
     logger:debug("first turn setup")
@@ -160,6 +161,26 @@ function bot_hivemind(params, sb_stats)
             attack_availableShipsExponent = 1,
             attack_overallBias = 1,
             attack_overallWeight = 1,
+            defend_defendWeakTargetProdFactor = 1,
+            defend_defendWeakDistExponent = 1,
+            defend_defendWeakDistDiscountExponent = 1,
+            defend_defendWeakDistDiscount = 1,
+            defend_defendWeakNetShips = 1,
+            defend_defendWeakStolenProd = 1,
+            defend_defendWeakAmountSentExponent = 1,
+            defend_defendWeakAmountSentFactor = 1,
+            defend_defendWeakOverallWeight = 1,
+            defend_defendWeakOverallBias = 1,
+            defend_sendReservationsAmountSentExponent = 1,
+            defend_sendReservationsAmountSentFactor = 1,
+            defend_sendReservationsDistDiscountExponent = 1,
+            defend_sendReservationsOverallWeight = 1,
+            defend_sendReservationsOverallBias = 1,
+            defend_fleetRadiusDefenseLeniency = 1,
+            defend_overallBias = 1,
+            defend_overallWeight = 1,
+            defend_nearbyReserveProportion = 1,
+            defend_targetReserveProportion = 1,
         },
         settings = {
             multiSelect = true,
@@ -185,6 +206,11 @@ function bot_hivemind(params, sb_stats)
         MEM.initialized = true
         firstTurnSetup(params)
     end
+
+    local ticks, alloc = sb_stats()
+    logger:debug("stats before everything:")
+    logger:debug("ticks, alloc = " .. ticks .. " , " .. alloc)
+
     local map = Map.new(ITEMS)
     local users = map:getUserList(false)
     if #users ~= 2 then 
@@ -208,7 +234,21 @@ function bot_hivemind(params, sb_stats)
         botUser = botUser,
     }
 
+    local ticks, alloc = sb_stats()
+    logger:debug("stats before move selection:")
+    logger:debug("ticks, alloc = " .. ticks .. " , " .. alloc)
+
+    -- local profiler = Profiler.new()
+    -- profiler:profile(mapFuture)
+
     local move = getMove(OPTS, MEM)
+
+    local ticks, alloc = sb_stats()
+    logger:debug("stats after move selection:")
+    logger:debug("ticks, alloc = " .. ticks .. " , " .. alloc)
+
+    -- profiler:printData(mapFuture)
+
     logger:info("CHOOSE: " .. move:getSummary())
     logger:info("----------------------------------------")
 
@@ -225,9 +265,6 @@ function bot_hivemind(params, sb_stats)
     -- if OPTS.debug.drawEnemyTunnels then 
     --     debugDrawTunnels(botUser, map, mapTunnels, enemyUser, enemyFrontPlanets)
     -- end
-
-    local ticks, alloc = sb_stats()
-    -- print("ticks, alloc = " .. ticks .. " , " .. alloc)
 
     if not move or move.mind.name == "Pass" then 
         return 
@@ -268,9 +305,9 @@ function getMove(params, mem)
         gradeAction(action, minds, mem.plans)
     end
 
-    for i,a in ipairs(candidates) do 
-        logger:debug(a:getSummary())
-    end
+    -- for i,a in ipairs(candidates) do 
+    --     logger:debug(a:getSummary())
+    -- end
 
     candidates = common_utils.filter(candidates, function (a) return a:getOverallPriority() >= 0 end)
 
